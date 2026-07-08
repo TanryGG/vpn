@@ -1,0 +1,104 @@
+<%- include('_layout_open') %>
+<h1>VDS автонастройка</h1>
+<p class="muted">Эта версия настраивает VPN через локальный Xray Reality. Это надёжнее: сайт сам добавляет клиентов в конфиг Xray и не зависит от входа в 3x-ui API.</p>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Полная автонастройка</h2>
+    <p class="muted">Установит пакеты, подготовит Apache/PM2, найдёт или установит Xray, создаст systemd-сервис <code>vpn-gpt-xray</code>, сгенерирует Reality-ключи, откроет порты и сохранит все параметры в настройки сайта.</p>
+    <form method="post" action="/admin/vds/run-full">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-grid">
+        <label>Публичный IP / vpn.host<input name="public_ip" value="<%= settings['vpn.host'] || detected.public_ip || '' %>" placeholder="144.31.80.95"></label>
+        <label>Название в Happ<input name="vpn_display_name" value="<%= settings['vpn.display_name'] || 'AstraGate VPN' %>"></label>
+        <label>Регион<input name="vpn_region" value="<%= settings['vpn.region'] || 'Premium' %>"></label>
+        <label>Порт VPN Reality<input name="vpn_port" value="<%= settings['vpn.port'] || detected.vpn_port || '8443' %>"></label>
+        <label>SNI Reality<input name="vpn_sni" value="<%= settings['vpn.sni'] || detected.vpn_sni || 'www.microsoft.com' %>"></label>
+        <label>Название White VPN в Happ<input name="white_vpn_display_name" value="<%= settings['white_vpn.display_name'] || detected.white_vpn_display_name || 'AstraGate White' %>"></label>
+        <label>Регион White VPN<input name="white_vpn_region" value="<%= settings['white_vpn.region'] || detected.white_vpn_region || 'White' %>"></label>
+        <label>Порт White VPN Reality<input name="white_vpn_port" value="<%= settings['white_vpn.port'] || detected.white_vpn_port || '8444' %>"></label>
+        <label>Порт 3x-ui панели, если нужна<input name="xui_port" value="<%= detected.xui_port || '2053' %>"></label>
+        <label>Логин 3x-ui<input name="xui_username" value="<%= settings['xui.username'] || detected.xui_username || 'admin' %>"></label>
+        <label>Пароль 3x-ui<input name="xui_password" value="<%= detected.xui_password || '' %>" placeholder="оставь пустым — сгенерируется"></label>
+      </div>
+      <button>Запустить полную автонастройку</button>
+    </form>
+    <p class="muted">После завершения сразу нажми “Проверить всю настройку”. Если всё зелёное — переходи в VPN и создавай клиенту ссылку.</p>
+  </div>
+
+  <div class="card">
+    <h2>Найденные параметры</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Параметр</th><th>Значение</th></tr>
+      <tr><td>Режим</td><td><%= detected.xray_local_enabled === 'true' ? 'Локальный Xray' : '-' %></td></tr>
+      <tr><td>public_ip</td><td><%= detected.public_ip || '-' %></td></tr>
+      <tr><td>vpn.port</td><td><%= detected.vpn_port || settings['vpn.port'] || '-' %></td></tr>
+      <tr><td>vpn.public_key</td><td><%= detected.vpn_public_key || settings['vpn.public_key'] || '-' %></td></tr>
+      <tr><td>vpn.short_id</td><td><%= detected.vpn_short_id || settings['vpn.short_id'] || '-' %></td></tr>
+      <tr><td>white_vpn.port</td><td><%= detected.white_vpn_port || settings['white_vpn.port'] || '-' %></td></tr>
+      <tr><td>white_vpn.public_key</td><td><%= detected.white_vpn_public_key || settings['white_vpn.public_key'] || '-' %></td></tr>
+      <tr><td>white_vpn.short_id</td><td><%= detected.white_vpn_short_id || settings['white_vpn.short_id'] || '-' %></td></tr>
+      <tr><td>xray config</td><td><%= detected.xray_config_path || settings['xray.config_path'] || '-' %></td></tr>
+      <tr><td>xui.panel</td><td><%= detected.xui_base_url || settings['xui.base_url'] || '-' %></td></tr>
+      <tr><td>xui.password</td><td><%= detected.xui_password || '-' %></td></tr>
+    </table></div>
+    <form method="post" action="/admin/vds/sync-detected" class="inline-block">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="secondary">Синхронизировать найденное</button>
+    </form>
+    <form method="post" action="/admin/vds/health" class="inline-block">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="ghost">Проверить всю настройку</button>
+    </form>
+    <form method="post" action="/admin/vds/repair-dual-vpn" class="inline-block">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="secondary">Починить обычный + White VPN</button>
+    </form>
+    <a class="button ghost" href="/admin/vpn">Открыть VPN</a>
+  </div>
+</div>
+
+<br>
+<div class="grid2">
+  <div class="card">
+    <h2>Что должно быть после настройки</h2>
+    <p class="muted">Если White VPN работает, а обычный VPN перестал, нажми кнопку “Починить обычный + White VPN”. Она пересоберёт оба inbound в одном Xray-конфиге, сохранит разные ключи/порты и восстановит клиентов по активным подпискам.</p>
+    <p>В настройках сайта должно быть:</p>
+    <div class="table-wrap"><table>
+      <tr><td>xray.local_enabled</td><td>true</td></tr>
+      <tr><td>xui.enabled</td><td>false</td></tr>
+      <tr><td>vpn.host</td><td>IP сервера</td></tr>
+      <tr><td>vpn.port</td><td>порт локального Xray, обычно 8443</td></tr>
+      <tr><td>vpn.public_key</td><td>ключ Reality</td></tr>
+      <tr><td>vpn.short_id</td><td>short id Reality</td></tr>
+      <tr><td>white_vpn.port</td><td>отдельный порт White VPN, обычно 8444</td></tr>
+      <tr><td>white_vpn.public_key</td><td>отдельный Reality-ключ White VPN</td></tr>
+      <tr><td>white_vpn.short_id</td><td>отдельный short id White VPN</td></tr>
+    </table></div>
+  </div>
+  <div class="card">
+    <h2>Быстрые действия</h2>
+    <form method="post" action="/admin/vds/run">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="ghost">Запустить базовую проверку</button>
+    </form>
+    <form method="post" action="/admin/vpn/rebuild-links">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="ghost">Пересобрать VPN-ссылки</button>
+    </form>
+    <p class="muted">Если менялся public_key, short_id, host или port — старые QR-коды нужно импортировать в Happ заново.</p>
+  </div>
+</div>
+
+<br>
+<div class="card">
+  <h2>Лог автонастройки</h2>
+  <pre class="answer setup-log"><%= log || 'Автонастройка ещё не запускалась.' %></pre>
+</div>
+
+<br>
+<div class="card">
+  <h2>Лог проверки</h2>
+  <pre class="answer setup-log"><%= health || 'Проверка ещё не запускалась.' %></pre>
+</div>
+<%- include('_layout_close') %>

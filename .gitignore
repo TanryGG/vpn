@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.env
+*.pem
+*.key
+*secret*
+*.log
+logs/
+*.sqlite
+*.sqlite3
+*.db
+uploads/
+tmp/

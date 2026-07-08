@@ -1,0 +1,25 @@
+<%- include('../partials_header') %>
+
+<main class="container admin-layout">
+  <aside class="card admin-sidebar">
+    <a href="/admin">Обзор</a>
+    <a href="/admin/users">Пользователи</a>
+    <a href="/admin/support">Техподдержка</a>
+    <a href="/admin/subscriptions">Подписки</a>
+    <a href="/admin/payments">Платежи</a>
+    <a href="/admin/plans">Тарифы</a>
+    <a href="/admin/promocodes">Промокоды</a>
+    <a href="/admin/referrals">Рефералка</a>
+    <a href="/admin/vpn">VPN</a>
+    <a href="/admin/gpt">GPT статистика</a>
+    <a href="/admin/ai-models">AI модели</a>
+    <a href="/admin/settings">Настройки</a>
+    <a href="/admin/vds">VDS автонастройка</a>
+    <a href="/admin/domain">Домен и HTTPS</a>
+    <a href="/admin/updates">Обновления</a>
+    <a href="/admin/telegram-proxy">Telegram Proxy</a>
+    <a href="/admin/permissions">Разрешения</a>
+    <a href="/admin/logs">Логи</a>
+  </aside>
+
+  <section class="admin-content">

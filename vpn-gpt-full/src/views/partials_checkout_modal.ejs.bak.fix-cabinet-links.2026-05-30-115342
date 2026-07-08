@@ -1,0 +1,73 @@
+<main class="container">
+  <span class="badge">Личный кабинет</span>
+
+  <h1>Управление подпиской</h1>
+
+  <% 
+    const sub = typeof subscription !== 'undefined' && subscription ? subscription : {};
+    const vpn = typeof vpnSub !== 'undefined' && vpnSub ? vpnSub : {};
+    const white = typeof whiteSub !== 'undefined' && whiteSub ? whiteSub : {};
+    const gpt = typeof gptSub !== 'undefined' && gptSub ? gptSub : {};
+  %>
+
+  <div class="tabs" style="margin:24px 0;display:flex;gap:12px;flex-wrap:wrap;">
+    <a class="button secondary" href="/cabinet">Обзор</a>
+    <a class="button secondary" href="/cabinet/vpn">VPN</a>
+    <a class="button secondary" href="/gpt">GPT</a>
+    <a class="button secondary" href="/plans">Продление</a>
+    <a class="button secondary" href="/profile">Профиль</a>
+    <a class="button secondary" href="/referrals">Рефералка</a>
+    <a class="button secondary" href="/telegram-proxy">Telegram</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      Общий тариф
+      <b><%= sub.name || sub.plan_name || sub.plan || 'не выбран' %></b>
+      <small><%= sub.expires_at ? ('до ' + sub.expires_at) : 'нет активного общего тарифа' %></small>
+    </div>
+
+    <div class="stat">
+      VPN
+      <b><%= vpn.active || sub.vpn_active ? 'активен' : 'не активен' %></b>
+      <small><%= vpn.expires_at ? ('до ' + vpn.expires_at) : 'основная подписка' %></small>
+    </div>
+
+    <div class="stat">
+      White VPN
+      <b><%= white.active ? 'активен' : 'не активен' %></b>
+      <small>отдельная подписка</small>
+    </div>
+
+    <div class="stat">
+      GPT
+      <b><%= gpt.active || sub.gpt_active ? 'активен' : 'не активен' %></b>
+      <small><%= gpt.tokens_used || 0 %> / <%= gpt.tokens_limit || sub.gpt_tokens_limit || 0 %> токенов</small>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:22px;">
+    <div class="card">
+      <h2>Быстрые действия</h2>
+      <p class="muted">Продли текущий доступ или перейди на другой тариф.</p>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <a class="button" href="/gpt">Открыть GPT</a>
+        <a class="button secondary" href="/plans">Продлить / сменить тариф</a>
+        <a class="button secondary" href="/profile">Настроить профиль</a>
+        <a class="button secondary" href="/telegram-proxy">Telegram Proxy</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Рекомендация</h2>
+      <p class="muted">
+        <% if ((vpn.active || sub.vpn_active) && (gpt.active || sub.gpt_active)) { %>
+          VPN и GPT активны. Для продления выбери текущий тариф или более высокий вариант.
+        <% } else { %>
+          Выбери тариф, чтобы активировать VPN, GPT или Telegram Proxy.
+        <% } %>
+      </p>
+    </div>
+  </div>
+</main>

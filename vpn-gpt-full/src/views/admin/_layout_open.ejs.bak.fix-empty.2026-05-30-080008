@@ -1,0 +1,11 @@
+<%- include('../partials_header') %>
+
+<main class="container admin-layout">
+  <aside class="card admin-sidebar">
+    <% const menuItems = (typeof adminMenu !== 'undefined' && adminMenu && adminMenu.length) ? adminMenu : []; %>
+    <% menuItems.forEach(function(item){ %>
+      <a href="<%= item.href %>"><%= item.label %></a>
+    <% }) %>
+  </aside>
+
+  <section class="admin-content">

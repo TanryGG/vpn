@@ -1,0 +1,20 @@
+<%- include('_layout_open') %>
+<h1>Промокоды</h1>
+<div class="card">
+  <h2>Создать / изменить промокод</h2>
+  <form method="post" action="/admin/promocodes/save" class="form-grid">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>ID для изменения<input name="id" placeholder="оставь пустым для нового"></label>
+    <label>Код<input name="code" placeholder="START50"></label>
+    <label>Тип скидки<select name="discount_type"><option value="percent">Процент</option><option value="fixed">Фиксированная сумма</option></select></label>
+    <label>Размер скидки<input name="discount_value" type="number" step="0.01" value="10"></label>
+    <label>Макс. использований<input name="max_uses" type="number" value="0"><span class="muted">0 = без лимита</span></label>
+    <label>Только для тарифа<select name="plan_id"><option value="">Все тарифы</option><% plans.forEach(p=>{ %><option value="<%= p.id %>"><%= p.name %></option><% }) %></select></label>
+    <label>Активен<select name="is_active"><option value="1" selected>Да</option><option value="">Нет</option></select></label>
+    <label>Действует до<input name="valid_until" type="datetime-local"></label>
+    <button>Сохранить</button>
+  </form>
+</div>
+<br>
+<div class="table-wrap"><table><tr><th>ID</th><th>Код</th><th>Скидка</th><th>Тариф</th><th>Использования</th><th>До</th><th>Статус</th><th></th></tr><% codes.forEach(c=>{ %><tr><td><%= c.id %></td><td><b><%= c.code %></b></td><td><%= c.discount_value %> <%= c.discount_type==='percent'?'%':'фикс.' %></td><td><%= c.plan_name || 'Все' %></td><td><%= c.used_count %> / <%= c.max_uses || '∞' %></td><td><%= c.valid_until || '-' %></td><td><%= c.is_active?'active':'off' %></td><td><form method="post" action="/admin/promocodes/<%= c.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="danger">Выключить</button></form></td></tr><% }) %></table></div>
+<%- include('_layout_close') %>

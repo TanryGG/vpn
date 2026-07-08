@@ -1,0 +1,170 @@
+<%- include('_layout_open') %>
+<h1>Настройки</h1>
+<p class="muted">Если в поле стоит ********, секрет уже сохранён. Оставь это значение, чтобы не менять пароль или ключ.</p>
+
+<form method="post" class="card settings-card clean-settings">
+<input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+<div class="settings-tabs" data-settings-tabs>
+  <button type="button" class="tab active" data-settings-tab="site">Сайт</button>
+  <button type="button" class="tab" data-settings-tab="ai">AI</button>
+  <button type="button" class="tab" data-settings-tab="payments">Платежи</button>
+  <button type="button" class="tab" data-settings-tab="vpn">VPN</button>
+  <button type="button" class="tab" data-settings-tab="smtp">SMTP</button>
+  <button type="button" class="tab" data-settings-tab="telegram">Telegram</button>
+  <button type="button" class="tab" data-settings-tab="ref">Рефералка</button>
+  <button type="button" class="tab" data-settings-tab="domain">Домен</button>
+</div>
+
+<section class="settings-panel active" data-settings-panel="site">
+  <h2>Сайт</h2>
+  <div class="form-grid">
+    <label>Название сайта<input name="app.name" value="<%= settings['app.name'] || 'AstraGate' %>"></label>
+    <label>Адрес сайта<input name="app.url" value="<%= settings['app.url'] || 'https://astragate.app' %>" placeholder="https://astragate.app"></label>
+    <label>Иконка сайта<input name="app.icon_url" value="<%= settings['app.icon_url'] || '/img/app-icon.png' %>" placeholder="/img/app-icon.png"></label>
+    <label>Иконка локации в Happ<input name="happ.location_icon" value="<%= settings['happ.location_icon'] || '🇵🇱' %>" placeholder="🇵🇱"></label>
+    <label>Текст поддержки в Happ<input name="app.support_text" value="<%= settings['app.support_text'] || 'Наша техподдержка: astragate.su' %>"></label>
+    <label>Ссылка поддержки<input name="app.support_url" value="<%= settings['app.support_url'] || 'https://astragate.su' %>"></label>
+    <label>Текст внизу сайта<input name="app.footer_text" value="<%= settings['app.footer_text'] || 'AstraGate — AI, VPN и приватный доступ в одном кабинете' %>"></label>
+  </div>
+</section>
+
+<section class="settings-panel" data-settings-panel="ai">
+  <h2>AI</h2>
+  <p class="muted">Основные параметры API. Список моделей, цены и коэффициенты списания редактируются в разделе “AI модели”.</p>
+  <div class="form-grid">
+    <label>API-ключ AI Tunnel<input name="ai.api_key" value="<%= settings['ai.api_key'] ? '********' : '' %>" placeholder="sk-..."></label>
+    <label>Адрес API<input name="ai.base_url" value="<%= settings['ai.base_url'] || 'https://api.aitunnel.ru/v1/' %>"></label>
+    <label>Модель по умолчанию<input name="ai.model" value="<%= settings['ai.model'] || 'openai/gpt-5.4-mini' %>"></label>
+    <label>Максимум токенов в ответе<input name="ai.max_tokens" value="<%= settings['ai.max_tokens'] || '2000' %>"></label>
+  </div>
+  <a class="button secondary" href="/admin/ai-models">Открыть AI модели</a>
+</section>
+
+<section class="settings-panel" data-settings-panel="payments">
+  <h2>YooMoney</h2>
+  <div class="form-grid">
+    <label>YooMoney включён<select name="payments.yoomoney.enabled"><option value="false">Нет</option><option value="true" <%= settings['payments.yoomoney.enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Номер кошелька / получатель<input name="payments.yoomoney.receiver" value="<%= settings['payments.yoomoney.receiver'] ? '********' : '' %>"></label>
+    <label>Секрет уведомлений<input name="payments.yoomoney.secret" value="<%= settings['payments.yoomoney.secret'] ? '********' : '' %>"></label>
+  </div>
+  <h2>CryptoBot</h2>
+  <div class="form-grid">
+    <label>CryptoBot включён<select name="payments.cryptobot.enabled"><option value="false">Нет</option><option value="true" <%= settings['payments.cryptobot.enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Токен CryptoBot<input name="payments.cryptobot.token" value="<%= settings['payments.cryptobot.token'] ? '********' : '' %>"></label>
+    <label>Валюта счёта<input name="payments.cryptobot.asset" value="<%= settings['payments.cryptobot.asset'] || 'USDT' %>"></label>
+  </div>
+  <div class="actions-wrap"><a class="button secondary" href="/admin/payments">Платежи</a><a class="button ghost" href="/admin/promocodes">Промокоды</a></div>
+</section>
+
+<section class="settings-panel" data-settings-panel="vpn">
+  <h2>VPN и Happ</h2>
+  <p class="muted">Local Xray — встроенный VPN-сервер сайта. 3x-ui можно оставить выключенным, если используешь автонастройку Local Xray.</p>
+  <div class="form-grid">
+    <label>Local Xray включён<select name="xray.local_enabled"><option value="false">Нет</option><option value="true" <%= settings['xray.local_enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Использовать 3x-ui<select name="xui.enabled"><option value="false">Нет</option><option value="true" <%= settings['xui.enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Адрес панели 3x-ui<input name="xui.base_url" value="<%= settings['xui.base_url'] || '' %>" placeholder="http://IP:2053/panel"></label>
+    <label>Secret 3x-ui<input name="xui.username" value="<%= settings['xui.username'] || '' %>"></label>
+    <label>Пароль 3x-ui<input name="xui.password" value="<%= settings['xui.password'] ? '********' : '' %>"></label>
+    <label>ID inbound в 3x-ui<input name="xui.inbound_id" value="<%= settings['xui.inbound_id'] || '1' %>"></label>
+    <label>Название обычного VPN в Happ<input name="vpn.display_name" value="<%= settings['vpn.display_name'] || 'AstraGate VPN' %>"></label>
+    <label>Регион обычного VPN<input name="vpn.region" value="<%= settings['vpn.region'] || '' %>" placeholder="Premium / Germany / Poland"></label>
+    <label>Показывать номер пользователя<select name="vpn.show_user_number"><option value="false">Нет</option><option value="true" <%= settings['vpn.show_user_number']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Название при неоплаченной подписке<input name="vpn.expired_label" value="<%= settings['vpn.expired_label'] || 'Подписка не оплачена' %>"></label>
+    <label>IP или домен VPN<input name="vpn.host" value="<%= settings['vpn.host'] || '' %>"></label>
+    <label>Порт обычного VPN<input name="vpn.port" value="<%= settings['vpn.port'] || '443' %>"></label>
+    <label>Reality Public Key<input name="vpn.public_key" value="<%= settings['vpn.public_key'] || '' %>"></label>
+    <label>Reality Short ID<input name="vpn.short_id" value="<%= settings['vpn.short_id'] || '' %>"></label>
+    <label>SNI для Reality<input name="vpn.sni" value="<%= settings['vpn.sni'] || 'www.microsoft.com' %>"></label>
+    <label>Spider X<input name="vpn.spider_x" value="<%= settings['vpn.spider_x'] || '/' %>"></label>
+    <label>Flow<input name="vpn.flow" value="<%= settings['vpn.flow'] || 'xtls-rprx-vision' %>"></label>
+    <label>Fingerprint<input name="vpn.fingerprint" value="<%= settings['vpn.fingerprint'] || 'chrome' %>"></label>
+    <label>Лимит IP по умолчанию<input name="vpn.limit_ip" value="<%= settings['vpn.limit_ip'] || '0' %>"></label>
+    <label>Лимит трафика по умолчанию, GB<input name="vpn.total_gb" value="<%= settings['vpn.total_gb'] || '0' %>"></label>
+  </div>
+  <div class="actions-wrap"><a class="button secondary" href="/admin/vds">VDS автонастройка</a><a class="button ghost" href="/admin/vpn">Проверить VPN</a></div>
+</section>
+
+<section class="settings-panel" data-settings-panel="smtp">
+  <h2>SMTP и письма</h2>
+  <div class="form-grid">
+    <label>SMTP включён<select name="smtp.enabled"><option value="false">Нет</option><option value="true" <%= settings['smtp.enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>SMTP host<input name="smtp.host" value="<%= settings['smtp.host'] || '' %>" placeholder="smtp.example.com"></label>
+    <label>SMTP port<input name="smtp.port" value="<%= settings['smtp.port'] || '587' %>"></label>
+    <label>SSL/TLS<select name="smtp.secure"><option value="false">Нет</option><option value="true" <%= settings['smtp.secure']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>SMTP логин<input name="smtp.user" value="<%= settings['smtp.user'] || '' %>"></label>
+    <label>SMTP пароль<input name="smtp.password" value="<%= settings['smtp.password'] ? '********' : '' %>"></label>
+    <label>Отправитель письма<input name="smtp.from" value="<%= settings['smtp.from'] || '' %>" placeholder="VPN+GPT <noreply@example.com>"></label>
+    <label>Письмо после регистрации<select name="smtp.registration_email"><option value="false">Нет</option><option value="true" <%= settings['smtp.registration_email']==='true'?'selected':'' %>>Да</option></select></label>
+  </div>
+  <div class="smtp-test-box">
+    <h3>Проверка SMTP</h3>
+    <p class="muted">Сначала сохрани настройки, потом отправь тестовое письмо.</p>
+    <div class="form-grid compact-form">
+      <label>Email для теста<input form="smtp-test-form" name="email" placeholder="test@example.com"></label>
+    </div>
+  </div>
+</section>
+
+
+<section class="settings-panel" data-settings-panel="telegram">
+  <h2>Telegram-уведомления</h2>
+  <p class="muted">Бот не запускается отдельным процессом: уведомления отправляет основной процесс сайта <code>pm2 vpn-gpt-full</code>. Достаточно указать токен бота и chat ID.</p>
+  <div class="form-grid">
+    <label>Уведомления техподдержки<select name="telegram.support_enabled"><option value="false">Нет</option><option value="true" <%= settings['telegram.support_enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Токен Telegram-бота<input name="telegram.bot_token" value="<%= settings['telegram.bot_token'] ? '********' : '' %>" placeholder="123456:ABC..."></label>
+    <label>Chat ID для уведомлений<input name="telegram.chat_id" value="<%= settings['telegram.chat_id'] || '' %>" placeholder="-1001234567890 или ваш ID"></label>
+  </div>
+  <div class="actions-wrap"><button form="telegram-test-form" type="submit" class="secondary">Отправить тест в Telegram</button></div>
+  <div class="telegram-help card-lite">
+    <b>Как получить chat ID</b>
+    <p class="muted">Добавь бота в группу поддержки, отправь любое сообщение в группу, затем открой в браузере <code>https://api.telegram.org/botТОКЕН/getUpdates</code> и возьми <code>chat.id</code>.</p>
+  </div>
+</section>
+
+<section class="settings-panel" data-settings-panel="ref">
+  <h2>Реферальная программа</h2>
+  <div class="form-grid">
+    <label>Рефералка включена<select name="referral.enabled"><option value="false">Нет</option><option value="true" <%= settings['referral.enabled']==='true'?'selected':'' %>>Да</option></select></label>
+    <label>Бонусных дней за приглашение<input name="referral.bonus_days" value="<%= settings['referral.bonus_days'] || '3' %>"></label>
+    <label>Код тарифа для бонуса<input name="referral.bonus_plan_code" value="<%= settings['referral.bonus_plan_code'] || 'combo-day' %>" placeholder="combo-day"></label>
+    <label>Процент партнёру<input name="referral.percent" value="<%= settings['referral.percent'] || '0' %>"></label>
+  </div>
+  <div class="actions-wrap"><a class="button secondary" href="/admin/referrals">Статистика рефералки</a></div>
+</section>
+
+
+<section class="settings-panel" data-settings-panel="domain">
+  <h2>Домен и HTTPS</h2>
+  <p class="muted">Перенос на домен запускается отдельным мастером: он настроит Apache, Certbot HTTPS, app.url, и заменит IP на домен в Happ-ссылках.</p>
+  <div class="form-grid">
+    <label>Текущий домен<input name="app.domain" value="<%= settings['app.domain'] || '' %>" placeholder="astragate.app"></label>
+    <label>Адрес сайта<input name="app.url" value="<%= settings['app.url'] || '' %>" placeholder="https://astragate.app"></label>
+    <label>Иконка сайта<input name="app.icon_url" value="<%= settings['app.icon_url'] || '/img/app-icon.png' %>"></label>
+    <label>Иконка локации в Happ<input name="happ.location_icon" value="<%= settings['happ.location_icon'] || '🇵🇱' %>" placeholder="🇵🇱"></label>
+  </div>
+  <div class="actions-wrap"><a class="button secondary" href="/admin/domain">Открыть мастер переноса на домен</a></div>
+</section>
+
+<div class="settings-savebar"><button>Сохранить настройки</button></div>
+</form>
+
+<form id="smtp-test-form" method="post" action="/admin/smtp/test"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
+<form id="telegram-test-form" method="post" action="/admin/telegram/test"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
+
+<script>
+(function(){
+  const tabs=[...document.querySelectorAll('[data-settings-tab]')];
+  const panels=[...document.querySelectorAll('[data-settings-panel]')];
+  function open(name){
+    tabs.forEach(t=>t.classList.toggle('active',t.dataset.settingsTab===name));
+    panels.forEach(p=>p.classList.toggle('active',p.dataset.settingsPanel===name));
+    history.replaceState(null,'','#'+name);
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>open(t.dataset.settingsTab)));
+  const initial=(location.hash||'#site').replace('#','');
+  if(tabs.some(t=>t.dataset.settingsTab===initial)) open(initial);
+})();
+</script>
+<%- include('_layout_close') %>
+<div id="telegram-proxy" class="card telegram-proxy-autosetup-card"><h2>Telegram Proxy</h2><p class="muted">Тариф 50 ₽/мес. Автонастройка установит MTProto-прокси на порт 8445.</p><form method="post" action="/admin/telegram-proxy/autosetup"><% if (typeof csrfToken !== 'undefined') { %><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% } %><label>Host<input name="host" value="astragate.su"></label><label>Порт<input name="port" value="8445"></label><button class="button" type="submit">Автонастроить Telegram Proxy</button></form></div>

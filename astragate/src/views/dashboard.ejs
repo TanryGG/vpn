@@ -1,0 +1,338 @@
+<%- include('partials_header') %>
+<section class="page-head">
+  <div>
+    <span class="badge">Личный кабинет</span>
+    <h1>Управление подпиской</h1>
+<p><a class="button" href="/telegram-proxy">Telegram Proxy</a></p>
+    <p class="muted">Здесь видно активный доступ, VPN-ссылка, GPT-лимиты, продление и переход на другой тариф.</p>
+  </div>
+</section>
+
+<div class="dashboard-tabs" data-tabs>
+  <button type="button" class="tab active" data-tab="overview">Обзор</button>
+  <button type="button" class="tab" data-tab="vpn">VPN</button>
+  <button type="button" class="tab" data-tab="gpt">GPT</button>
+  <button type="button" class="tab" data-tab="plans">Продление</button>
+  <button type="button" class="tab" data-tab="profile">Профиль</button>
+  <button type="button" class="tab" data-tab="ref">Рефералка</button>
+  <button type="button" class="tab" data-tab="staff-telegram">Telegram</button>
+</div>
+
+
+<section class="tab-panel active" data-panel="overview">
+  <div class="grid3">
+    <div class="stat"><span>Общий тариф</span><b><%= sub ? sub.plan_name : 'нет' %></b><small><%= sub ? ('до ' + sub.ends_at) : 'выберите тариф ниже' %></small></div>
+    <div class="stat"><span>VPN</span><b><%= vpnSub ? 'активен' : 'не активен' %></b><small><%= vpnSub ? ('до ' + vpnSub.ends_at + ' · устройств: ' + (vpnSub.device_limit || 1)) : 'нет VPN-доступа' %></small></div>
+    <div class="stat"><span>White VPN</span><b><%= whiteVpnSub ? 'активен' : 'не активен' %></b><small><%= whiteVpnSub ? ('до ' + whiteVpnSub.ends_at + ' · устройств: ' + (whiteVpnSub.device_limit || 1)) : 'отдельная подписка' %></small></div>
+    <div class="stat"><span>GPT</span><b><%= gptSub ? 'активен' : 'не активен' %></b><small><%= gptSub ? (usage + ' / ' + gptSub.gpt_monthly_tokens + ' токенов') : 'нет GPT-доступа' %></small></div>
+  </div>
+  <br>
+  <div class="grid2">
+    <div class="card">
+      <h2>Быстрые действия</h2>
+      <p class="muted">Продли текущий доступ или перейди на другой тариф.</p>
+      <% if(gptSub){ %><a class="button" href="/chat">Открыть GPT</a><% } %>
+      <button type="button" class="secondary" data-open-tab="plans">Продлить / сменить тариф</button>
+      <button type="button" class="ghost" data-open-tab="profile">Настроить профиль</button>
+    </div>
+    <div class="card">
+      <h2>Рекомендация</h2>
+      <% if(!vpnSub && !gptSub){ %>
+        <p class="muted">У тебя нет активной подписки. Начни с дневного тарифа или выбери месячный, если нужен постоянный доступ.</p>
+      <% } else if(vpnSub && !gptSub){ %>
+        <p class="muted">VPN активен. Можно докупить GPT отдельно или перейти на combo-тариф.</p>
+      <% } else if(!vpnSub && gptSub){ %>
+        <p class="muted">GPT активен. Можно докупить VPN отдельно или перейти на combo-тариф.</p>
+      <% } else { %>
+        <p class="muted">VPN и GPT активны. Для продления выбери текущий тариф или более высокий вариант.</p>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="vpn">
+  <% if(!trialClaimed){ %>
+  <div class="card trial-card trial-vpn-card">
+    <span class="pill">Пробный доступ</span>
+    <h2>VPN + GPT на 1 день</h2>
+    <% if(profile && Number(profile.email_verified) === 1){ %>
+      <p class="muted">Почта подтверждена. Можно получить бесплатный пробный доступ один раз.</p>
+      <form method="post" action="/trial/claim">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit">Получить пробный доступ</button>
+      </form>
+    <% } else { %>
+      <p class="muted">Для пробного доступа нужно подтвердить почту. Нажми кнопку, отправь код на email и введи его в модальном окне.</p>
+      <button type="button" data-open-trial-modal>Получить пробный доступ</button>
+    <% } %>
+  </div>
+  <% } %>
+  <div class="grid2">
+    <div class="card">
+      <span class="pill">Happ / VLESS</span>
+      <h2>VPN-ссылка</h2>
+      <% if(vpnSub && vpn){ %>
+        <p class="muted">VLESS-ссылка скрыта. Для подключения используй безопасную подписку Happ.</p>
+        <% if(qr){ %><img class="qr" src="<%= qr %>"><% } %>
+        <div class="actions-wrap"><a class="button" href="/happ/main">Подключить в Happ</a><a class="button ghost" href="<%= vpnSubUrl %>" target="_blank" rel="noopener">Проверить подписку</a></div><p class="muted">Истекает: <b><%= vpnSub.ends_at %></b><% if(vpnSub.total_gb && Number(vpnSub.total_gb)>0){ %> · Трафик: <b><%= vpnSub.total_gb %> GB</b><% } else { %> · Трафик: <b>без лимита</b><% } %></p>
+        <% if(!vpnSub){ %><p class="muted">Подписка закончилась. В Happ после повторного импорта будет отображаться “Подписка не оплачена”.</p><% } %>
+      <% } else if(vpnSub) { %>
+        <p class="muted">VPN-подписка активна. Нажми кнопку, чтобы восстановить или создать Happ-ссылку. Если оплата была в течение 3 дней после отключения, восстановится прежняя ссылка.</p>
+        <form method="post" action="/vpn/create"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button>Восстановить VPN-ссылку</button></form>
+      <% } else { %>
+        <p class="muted">VPN-подписка не активна. Ссылка скрыта из кабинета, а серверный доступ отключён.</p>
+        <button type="button" class="secondary" data-open-tab="plans" data-filter-kind="vpn">Продлить VPN</button>
+      <% } %>
+    </div>
+    <div class="card">
+      <span class="pill">White VPN</span>
+      <h2>Отдельная White VPN-ссылка</h2>
+      <% if(whiteVpnSub && whiteVpn){ %>
+        <p class="muted">White VLESS-ссылка скрыта. Для подключения используй отдельную подписку Happ.</p>
+        <% if(whiteQr){ %><img class="qr" src="<%= whiteQr %>"><% } %>
+        <div class="actions-wrap"><a class="button" href="/happ/white">Подключить White в Happ</a><a class="button ghost" href="<%= whiteVpnSubUrl %>" target="_blank" rel="noopener">Проверить подписку</a></div><p class="muted">Истекает: <b><%= whiteVpnSub.ends_at %></b><% if(whiteVpnSub.total_gb && Number(whiteVpnSub.total_gb)>0){ %> · Трафик: <b><%= whiteVpnSub.total_gb %> GB</b><% } else { %> · Трафик: <b>без лимита</b><% } %></p>
+        <% if(!whiteVpnSub){ %><p class="muted">White VPN-подписка закончилась. В Happ будет отображаться “Подписка не оплачена”.</p><% } %>
+      <% } else if(whiteVpnSub) { %>
+        <p class="muted">White VPN-подписка активна. Нажми кнопку, чтобы восстановить или создать отдельную Happ-ссылку. Если оплата была в течение 3 дней после отключения, восстановится прежняя ссылка.</p>
+        <form method="post" action="/vpn/create-white"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button>Восстановить White VPN-ссылку</button></form>
+      <% } else { %>
+        <p class="muted">White VPN-подписка не активна. White-ссылка скрыта из кабинета, а серверный доступ отключён.</p>
+        <button type="button" class="secondary" data-open-tab="plans" data-filter-kind="white_vpn">Продлить White VPN</button>
+      <% } %>
+    </div>
+    <div class="card">
+      <h2>Продлить VPN</h2>
+      <p class="muted">Показаны тарифы только с VPN-доступом. White VPN покупается и пересобирается отдельно.</p>
+      <button type="button" class="secondary" data-open-tab="plans" data-filter-kind="vpn">Показать VPN-тарифы</button>
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="gpt">
+  <div class="grid2">
+    <div class="card">
+      <span class="pill">GPT</span>
+      <h2>GPT-доступ</h2>
+      <% if(gptSub){ %>
+        <p>Активен до: <b><%= gptSub.ends_at %></b></p>
+        <p class="muted">Использовано: <b><%= usage %></b> / <b><%= gptSub.gpt_monthly_tokens %></b> токенов</p>
+        <a class="button" href="/chat">Открыть GPT</a>
+      <% } else { %>
+        <p class="muted">GPT-подписка не активна. Выбери GPT или combo-тариф.</p>
+        <button type="button" class="secondary" data-open-tab="plans" data-filter-kind="gpt">Показать GPT-тарифы</button>
+      <% } %>
+    </div>
+    <div class="card">
+      <h2>Модели и файлы</h2>
+      <p class="muted">В GPT-чате можно выбирать модель. Дорогие модели списывают больше токенов, дешёвые — меньше. Поддерживаются фото, документы и архивы.</p>
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="plans">
+  <div class="card">
+    <div class="plans-head">
+      <div>
+        <h2>Продление и смена тарифа</h2>
+        <p class="muted">Выбери текущий тип доступа или перейди на другой тариф. Промокод вводится один раз для выбранного способа оплаты.</p>
+      </div>
+      <div class="segmented" data-plan-filters>
+        <button type="button" class="active" data-kind="all">Все</button>
+        <button type="button" data-kind="vpn">VPN</button>
+        <button type="button" data-kind="gpt">GPT</button>
+        <button type="button" data-kind="combo">VPN + GPT</button>
+        <button type="button" data-kind="white_vpn">White VPN</button>
+      </div>
+    </div>
+    <div class="segmented small" data-period-filters>
+      <button type="button" class="active" data-days="all">Все сроки</button>
+      <button type="button" data-days="1">1 день</button>
+      <button type="button" data-days="7">7 дней</button>
+      <button type="button" data-days="30">30 дней</button>
+      <button type="button" data-days="90">90 дней</button>
+    </div>
+  </div>
+  <br>
+  <div class="plans-list">
+    <% plans.forEach(p=>{ const kind = p.white_vpn_enabled ? 'white_vpn' : p.plan_kind; %>
+      <article class="plan-row" data-plan-card data-kind="<%= kind %>" data-days="<%= p.days %>">
+        <div class="plan-main">
+          <div>
+            <span class="pill"><%= p.white_vpn_enabled ? 'white vpn' : p.plan_kind %></span>
+            <span class="pill"><%= p.days %> дн.</span><% if(p.vpn_enabled){ %><span class="pill"><%= p.device_limit || 1 %> устр.</span><span class="pill"><%= p.total_gb && Number(p.total_gb)>0 ? (p.total_gb + ' GB') : '∞ GB' %></span><% } %>
+          </div>
+          <h3><%= p.name %></h3>
+          <p class="muted"><%= p.description || 'Доступ по выбранному тарифу' %></p>
+        </div>
+        <div class="plan-price"><b><%= p.price %> <%= p.currency %></b><small><%= p.days %> дн.<% if(p.vpn_enabled){ %> · <%= p.device_limit || 1 %> устр. · <%= p.total_gb && Number(p.total_gb)>0 ? (p.total_gb + ' GB') : 'без лимита' %><% } %></small></div>
+        <div class="plan-action">
+          <button type="button" data-open-checkout data-plan-id="<%= p.id %>" data-name="<%= p.name %>" data-description="<%= p.description || '' %>" data-price="<%= p.price %>" data-currency="<%= p.currency %>" data-days="<%= p.days %>" data-type="<%= kind %>" data-devices="<%= p.device_limit || 0 %>" data-traffic="<%= p.total_gb || 0 %>">Оформить</button>
+        </div>
+      </article>
+    <% }) %>
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="profile">
+  <div class="grid2 account-settings-grid">
+    <div class="card">
+      <h2>Профиль пользователя</h2>
+      <p class="muted">Основные данные аккаунта.</p>
+      <form method="post" action="/profile" class="form-grid">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Имя<input name="name" value="<%= profile.name || '' %>"></label>
+        <label>Телефон<input name="phone" value="<%= profile.phone || '' %>"></label>
+        <label>Telegram<input name="telegram" value="<%= profile.telegram || '' %>"></label>
+        <label>Avatar URL<input name="avatar_url" value="<%= profile.avatar_url || '' %>"></label>
+        <button>Сохранить профиль</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Смена пароля</h2>
+      <p class="muted">Сначала введи текущий пароль, затем новый.</p>
+      <form method="post" action="/profile/password" class="form-grid compact-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Старый пароль<input type="password" name="current_password" autocomplete="current-password" required></label>
+        <label>Новый пароль<input type="password" name="new_password" autocomplete="new-password" minlength="8" required></label>
+        <label>Повтор нового пароля<input type="password" name="repeat_password" autocomplete="new-password" minlength="8" required></label>
+        <button>Изменить пароль</button>
+      </form>
+    </div>
+
+    <div class="card account-email-card">
+      <h2>Смена почты</h2>
+      <p>Текущая почта: <b><%= profile.email %></b></p>
+      <p class="muted">Для смены почты код придёт на старую почту и на новую почту. Нужно ввести оба кода.</p>
+      <form method="post" action="/profile/email/request" class="form-grid compact-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Новая почта<input type="email" name="new_email" placeholder="new@example.com" required></label>
+        <button>Отправить коды</button>
+      </form>
+      <% if(emailChange){ %>
+        <hr>
+        <div class="status-card warn-soft">
+          <b>Ожидается подтверждение</b>
+          <span>Новая почта: <%= emailChange.new_email %></span>
+          <span>Коды действуют до: <%= emailChange.expires_at %></span>
+        </div>
+        <form method="post" action="/profile/email/confirm" class="form-grid compact-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Код со старой почты<input name="old_code" inputmode="numeric" pattern="[0-9]{6}" placeholder="123456" required></label>
+          <label>Код с новой почты<input name="new_code" inputmode="numeric" pattern="[0-9]{6}" placeholder="123456" required></label>
+          <button>Подтвердить смену почты</button>
+        </form>
+        <form method="post" action="/profile/email/cancel" class="inline-block">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="ghost">Отменить смену почты</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="ref">
+  <div class="card">
+    <h2>Реферальная программа</h2>
+    <p class="muted">Приглашай пользователей и получай бонусные дни после их первой оплаты.</p>
+    <textarea class="copybox" readonly><%= (typeof siteUrl !== 'undefined' && siteUrl ? siteUrl : '') %>/register?ref=<%= profile.referral_code || '' %></textarea>
+    <p>Код: <b><%= profile.referral_code || '-' %></b></p>
+    <p>Регистраций: <b><%= refStats.total || 0 %></b>, оплат: <b><%= refStats.paid || 0 %></b></p>
+  </div>
+</section>
+
+
+<% if(!trialClaimed && profile && Number(profile.email_verified) !== 1){ %>
+<div class="checkout-modal trial-modal" id="trialModal" aria-hidden="true">
+  <div class="checkout-backdrop" data-close-trial-modal></div>
+  <div class="checkout-panel">
+    <button class="checkout-close" type="button" data-close-trial-modal>×</button>
+    <span class="pill">Подтверждение почты</span>
+    <h2>Получить VPN + GPT на 1 день</h2>
+    <p class="muted">Пробная подписка выдаётся только после подтверждения почты через SMTP. Код придёт на: <b><%= profile.email %></b></p>
+
+    <form method="post" action="/email/verification/send" class="trial-modal-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="secondary">Отправить код на почту</button>
+    </form>
+
+    <form method="post" action="/trial/claim" class="form-grid compact-form trial-modal-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Код из письма
+        <input name="email_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" required>
+      </label>
+      <button type="submit">Подтвердить и получить пробный доступ</button>
+    </form>
+
+    <p class="small-text muted">Если письмо не пришло, проверь спам или нажми “Отправить код” ещё раз. Без подтверждения почты пробная подписка не выдаётся.</p>
+  </div>
+</div>
+<% } %>
+<script>
+(function(){
+  function showTab(name){
+    document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('active', p.dataset.panel===name));
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>showTab(btn.dataset.tab)));
+  document.querySelectorAll('[data-open-tab]').forEach(btn=>btn.addEventListener('click',()=>{
+    showTab(btn.dataset.openTab);
+    if(btn.dataset.filterKind){ setTimeout(()=>{ const f=document.querySelector(`[data-plan-filters] [data-kind="${btn.dataset.filterKind}"]`); if(f) f.click(); }, 50); }
+  }));
+  const kindBtns=[...document.querySelectorAll('[data-plan-filters] button')];
+  const dayBtns=[...document.querySelectorAll('[data-period-filters] button')];
+  let kind='all', days='all';
+  function apply(){
+    document.querySelectorAll('[data-plan-card]').forEach(card=>{
+      const okKind=kind==='all'||card.dataset.kind===kind||(kind==='vpn'&&card.dataset.kind==='white_vpn');
+      const okDays=days==='all'||card.dataset.days===days;
+      card.style.display=(okKind&&okDays)?'grid':'none';
+    });
+  }
+  kindBtns.forEach(b=>b.addEventListener('click',()=>{kind=b.dataset.kind;kindBtns.forEach(x=>x.classList.toggle('active',x===b));apply();}));
+  dayBtns.forEach(b=>b.addEventListener('click',()=>{days=b.dataset.days;dayBtns.forEach(x=>x.classList.toggle('active',x===b));apply();}));
+
+  document.querySelectorAll('[data-open-trial-modal]').forEach(btn=>btn.addEventListener('click',()=>{
+    const m=document.getElementById('trialModal');
+    if(m){ m.classList.add('open'); document.body.classList.add('modal-open'); }
+  }));
+  document.querySelectorAll('[data-close-trial-modal]').forEach(btn=>btn.addEventListener('click',()=>{
+    const m=document.getElementById('trialModal');
+    if(m){ m.classList.remove('open'); document.body.classList.remove('modal-open'); }
+  }));
+})();
+</script>
+
+<section class="tab-panel" data-panel="staff-telegram">
+  <div class="card">
+    <h2>Telegram</h2>
+    <p class="muted">Привяжи Telegram, чтобы пользоваться ботом AstraGate: VPN, GPT, продление, промокоды и поддержка. Сотрудникам дополнительно приходят уведомления.</p>
+    <% if(profile.telegram_chat_id){ %>
+      <div class="status-card ok-soft">
+        <b>Telegram привязан</b>
+        <span>Chat ID: <%= profile.telegram_chat_id %></span>
+        <span>Привязан: <%= profile.telegram_linked_at || '-' %></span>
+      </div>
+      <form method="post" action="/profile/telegram-unlink">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="danger">Отвязать Telegram</button>
+      </form>
+    <% } else { %>
+      <ol class="steps-list">
+        <li>Открой Telegram-бота проекта.</li>
+        <li>Напиши боту <code>/start</code> или <code>/code</code>.</li>
+        <li>Скопируй 6-значный код и вставь ниже.</li>
+      </ol>
+      <form method="post" action="/profile/telegram-bind" class="form-grid compact-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Код из Telegram-бота<input name="telegram_code" inputmode="numeric" pattern="[0-9]{6}" placeholder="123456" required></label>
+        <button>Привязать Telegram</button>
+      </form>
+      <p class="muted">Код действует 15 минут. После привязки напиши боту /menu.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials_checkout_modal') %>
+<%- include('partials_footer') %>

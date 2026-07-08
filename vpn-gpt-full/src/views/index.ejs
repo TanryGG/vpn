@@ -1,0 +1,66 @@
+<%- include('partials_header') %>
+<section class="hero">
+  <div class="hero-card">
+    <div class="badge">VPN, GPT или всё вместе</div>
+    <h1>Гибкие тарифы для доступа, чата и подписок</h1>
+    <p>Выбирай ежедневный, недельный или месячный доступ. Можно купить только VPN, только GPT или полный тариф VPN + GPT.</p>
+    <div><a class="button" href="#plans">Выбрать тариф</a><a class="button ghost" href="/register">Создать аккаунт</a></div>
+  </div>
+  <div class="hero-side"><div class="feature-list">
+    <div class="feature"><span class="dot"></span><div><b>VPN для Happ</b><span>VLESS Reality, ссылка и QR-код в кабинете.</span></div></div>
+    <div class="feature"><span class="dot"></span><div><b>GPT с файлами</b><span>История, несколько чатов и загрузка файлов.</span></div></div>
+    <div class="feature"><span class="dot"></span><div><b>Промокоды</b><span>Промокод вводится в окне оплаты, без лишних полей на карточках.</span></div></div>
+  </div></div>
+</section>
+
+<section id="plans" class="plans-public">
+  <div class="section-head">
+    <div><h1>Тарифы</h1><p class="muted">Выбери тип доступа и оформи оплату в модальном окне.</p></div>
+    <div class="segmented" data-public-plan-filters>
+      <button type="button" class="active" data-kind="all">Все</button>
+      <button type="button" data-kind="vpn">VPN</button>
+      <button type="button" data-kind="gpt">GPT</button>
+      <button type="button" data-kind="combo">VPN + GPT</button>
+      <button type="button" data-kind="white_vpn">White VPN</button>
+    </div>
+  </div>
+  <div class="plans-list">
+  <% plans.forEach(p=>{ const kind = p.white_vpn_enabled ? 'white_vpn' : (p.plan_kind || (p.vpn_enabled && p.gpt_enabled ? 'combo' : (p.vpn_enabled ? 'vpn' : 'gpt'))); %>
+    <article class="plan-row" data-public-plan data-kind="<%= kind %>" data-days="<%= p.days %>">
+      <div class="plan-main">
+        <div>
+          <span class="pill"><%= p.days %> дн.</span>
+          <% if(p.vpn_enabled){ %><span class="pill"><%= p.device_limit || 1 %> устр.</span><% } %>
+          <span class="pill"><%= kind==='white_vpn' ? 'White VPN' : (kind==='combo' ? 'VPN + GPT' : kind.toUpperCase()) %></span>
+        </div>
+        <h3><%= p.name %></h3>
+        <p class="muted"><%= p.description || 'Доступ по выбранному тарифу' %></p>
+      </div>
+      <div class="plan-price"><b><%= p.price %> <%= p.currency %></b><small><%= p.days %> дн.<% if(p.vpn_enabled){ %> · <%= p.device_limit || 1 %> устр.<% } %></small></div>
+      <div class="plan-action">
+        <% if(user){ %>
+          <button type="button" data-open-checkout data-plan-id="<%= p.id %>" data-name="<%= p.name %>" data-description="<%= p.description || '' %>" data-price="<%= p.price %>" data-currency="<%= p.currency %>" data-days="<%= p.days %>" data-type="<%= kind %>" data-devices="<%= p.device_limit || 0 %>" data-traffic="<%= p.total_gb || 0 %>">Оформить</button>
+        <% } else { %>
+          <a class="button" href="/register">Начать</a>
+        <% } %>
+      </div>
+    </article>
+  <% }) %>
+  </div>
+</section>
+<br>
+<section class="card wide"><h2>AI-модели внутри GPT-тарифов</h2><p class="muted">В кабинете можно выбирать модели OpenAI и Gemini. Дорогие модели списывают больше лимитных токенов, дешёвые — меньше. Админ может менять коэффициенты, цены и список моделей.</p></section><br>
+<script>
+(function(){
+  const buttons = document.querySelectorAll('[data-public-plan-filters] button');
+  buttons.forEach(btn=>btn.addEventListener('click',()=>{
+    const kind = btn.dataset.kind;
+    buttons.forEach(b=>b.classList.toggle('active', b===btn));
+    document.querySelectorAll('[data-public-plan]').forEach(card=>{
+      card.style.display = (kind === 'all' || card.dataset.kind === kind || (kind==='vpn' && card.dataset.kind==='white_vpn')) ? 'grid' : 'none';
+    });
+  }));
+})();
+</script>
+<%- include('partials_checkout_modal') %>
+<%- include('partials_footer') %>

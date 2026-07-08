@@ -1,0 +1,303 @@
+const fs = require('fs');
+const FILE = '/root/astragate/admin-permissions.json';
+
+const SUPER_ADMIN_EMAILS = [
+  'bureqrif3@outlook.com'
+];
+
+const FEATURES = {
+  overview: 'Обзор',
+  users: 'Пользователи',
+  support: 'Техподдержка',
+  subscriptions: 'Подписки',
+  payments: 'Платежи',
+  tariffs: 'Тарифы',
+  promocodes: 'Промокоды',
+  referrals: 'Рефералка',
+  vpn: 'VPN',
+  gpt_stats: 'GPT статистика',
+  ai_models: 'AI модели',
+  settings: 'Настройки',
+  vds: 'VDS автонастройка',
+  domain_https: 'Домен и HTTPS',
+  updates: 'Обновления',
+  telegram_proxy: 'Telegram Proxy',
+  permissions: 'Разрешения',
+  logs: 'Логи'
+};
+
+const MENU = [
+  {key:'overview', label:'Обзор', href:'/admin'},
+  {key:'users', label:'Пользователи', href:'/admin/users'},
+  {key:'support', label:'Техподдержка', href:'/admin/support'},
+  {key:'subscriptions', label:'Подписки', href:'/admin/subscriptions'},
+  {key:'payments', label:'Платежи', href:'/admin/payments'},
+  {key:'tariffs', label:'Тарифы', href:'/admin/plans'},
+  {key:'promocodes', label:'Промокоды', href:'/admin/promocodes'},
+  {key:'referrals', label:'Рефералка', href:'/admin/referrals'},
+  {key:'vpn', label:'VPN', href:'/admin/vpn'},
+  {key:'gpt_stats', label:'GPT статистика', href:'/admin/gpt'},
+  {key:'ai_models', label:'AI модели', href:'/admin/ai-models'},
+  {key:'settings', label:'Настройки', href:'/admin/settings'},
+  {key:'vds', label:'VDS автонастройка', href:'/admin/vds'},
+  {key:'domain_https', label:'Домен и HTTPS', href:'/admin/domain'},
+  {key:'updates', label:'Обновления', href:'/admin/updates'},
+  {key:'telegram_proxy', label:'Telegram Proxy', href:'/admin/telegram-proxy'},
+  {key:'permissions', label:'Разрешения', href:'/admin/permissions'},
+  {key:'logs', label:'Логи', href:'/admin/logs'}
+];
+
+const DEFAULTS = {
+  moderator: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:false, tariffs:false, promocodes:false, referrals:true,
+    vpn:false, gpt_stats:true, ai_models:false, settings:false,
+    vds:false, domain_https:false, updates:false, telegram_proxy:false,
+    permissions:false, logs:false
+  },
+  admin1: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:true, tariffs:false, promocodes:true, referrals:true,
+    vpn:true, gpt_stats:true, ai_models:false, settings:false,
+    vds:false, domain_https:false, updates:false, telegram_proxy:true,
+    permissions:false, logs:true
+  },
+  admin2: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:true, tariffs:true, promocodes:true, referrals:true,
+    vpn:true, gpt_stats:true, ai_models:true, settings:true,
+    vds:true, domain_https:true, updates:true, telegram_proxy:true,
+    permissions:false, logs:true
+  },
+  admin3: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:true, tariffs:true, promocodes:true, referrals:true,
+    vpn:true, gpt_stats:true, ai_models:true, settings:true,
+    vds:true, domain_https:true, updates:true, telegram_proxy:true,
+    permissions:true, logs:true
+  }
+};
+
+function loadPermissions(){
+  try {
+    if (!fs.existsSync(FILE)) {
+      fs.writeFileSync(FILE, JSON.stringify(DEFAULTS, null, 2));
+    }
+
+    const data = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+
+    return {
+      moderator: {...DEFAULTS.moderator, ...(data.moderator || {})},
+      admin1: {...DEFAULTS.admin1, ...(data.admin1 || {})},
+      admin2: {...DEFAULTS.admin2, ...(data.admin2 || {})},
+      admin3: {...DEFAULTS.admin3, ...(data.admin3 || {})}
+    };
+  } catch(e) {
+    return DEFAULTS;
+  }
+}
+
+function savePermissions(data){
+  const clean = {};
+
+  for (const role of Object.keys(DEFAULTS)) {
+    clean[role] = {};
+    for (const key of Object.keys(FEATURES)) {
+      clean[role][key] = !!(data[role] && data[role][key]);
+    }
+  }
+
+  // admin3 нельзя случайно закрыть.
+  clean.admin3 = {...DEFAULTS.admin3, ...clean.admin3};
+  clean.admin3.overview = true;
+  clean.admin3.permissions = true;
+
+  fs.writeFileSync(FILE, JSON.stringify(clean, null, 2));
+}
+
+function currentUser(req){
+  const session = req.session || {};
+
+  return (
+    req.user ||
+    req.admin ||
+    req.account ||
+    session.user ||
+    session.admin ||
+    session.account ||
+    session.profile ||
+    session.passport?.user ||
+    {}
+  );
+}
+
+function collectValues(req){
+  const session = req.session || {};
+  const u = currentUser(req);
+
+  const values = [];
+
+  for (const obj of [u, session]) {
+    if (!obj || typeof obj !== 'object') continue;
+
+    for (const key of [
+      'email',
+      'mail',
+      'login',
+      'username',
+      'role',
+      'admin_role',
+      'adminRole',
+      'admin_level',
+      'adminLevel',
+      'role_level',
+      'roleLevel',
+      'level',
+      'is_admin',
+      'isAdmin',
+      'is_superadmin',
+      'isSuperadmin'
+    ]) {
+      if (obj[key] !== undefined && obj[key] !== null) values.push(String(obj[key]));
+    }
+  }
+
+  return values;
+}
+
+function getAdminLevel(req){
+  const values = collectValues(req).map(v => String(v).toLowerCase());
+
+  // Супер-админ по email.
+  for (const email of SUPER_ADMIN_EMAILS) {
+    if (values.includes(email.toLowerCase())) return 3;
+  }
+
+  // Явные числовые уровни.
+  for (const v of values) {
+    if (v === '3') return 3;
+    if (v === '2') return 2;
+    if (v === '1') return 1;
+    if (v === '0') return 0;
+  }
+
+  const joined = values.join(' ');
+
+  if (
+    joined.includes('admin3') ||
+    joined.includes('admin_3') ||
+    joined.includes('level3') ||
+    joined.includes('level_3') ||
+    joined.includes('owner') ||
+    joined.includes('super') ||
+    joined.includes('root') ||
+    joined.includes('главный')
+  ) return 3;
+
+  if (
+    joined.includes('admin2') ||
+    joined.includes('admin_2') ||
+    joined.includes('level2') ||
+    joined.includes('level_2')
+  ) return 2;
+
+  if (
+    joined.includes('admin1') ||
+    joined.includes('admin_1') ||
+    joined.includes('level1') ||
+    joined.includes('level_1')
+  ) return 1;
+
+  if (
+    joined.includes('moder') ||
+    joined.includes('модер')
+  ) return 0;
+
+  // ВАЖНО: в старой системе главный админ часто просто role="admin".
+  if (
+    values.includes('admin') ||
+    values.includes('administrator') ||
+    values.includes('админ') ||
+    values.includes('true')
+  ) return 3;
+
+  // Если человек уже попал в /admin, но роль не распознана — считаем admin3,
+  // чтобы не закрыть владельцу доступ.
+  return 3;
+}
+
+function roleKeyByLevel(level){
+  if (level >= 3) return 'admin3';
+  if (level === 2) return 'admin2';
+  if (level === 1) return 'admin1';
+  return 'moderator';
+}
+
+function can(req, feature){
+  const level = getAdminLevel(req);
+
+  // admin3 всегда может всё.
+  if (level >= 3) return true;
+
+  const roleKey = roleKeyByLevel(level);
+  const perms = loadPermissions();
+
+  return !!(perms[roleKey] && perms[roleKey][feature]);
+}
+
+function allowedMenu(req){
+  const level = getAdminLevel(req);
+
+  // admin3 всегда видит всё меню.
+  if (level >= 3) return MENU;
+
+  const roleKey = roleKeyByLevel(level);
+  const perms = loadPermissions();
+
+  return MENU.filter(item => !!(perms[roleKey] && perms[roleKey][item.key]));
+}
+
+function requireFeature(feature){
+  return function(req,res,next){
+    if (can(req, feature)) return next();
+
+    if (res.render) {
+      return res.status(403).render('error', {
+        title: 'Доступ запрещён',
+        message: 'Эта вкладка недоступна для вашего уровня доступа.'
+      });
+    }
+
+    return res.status(403).send('Доступ запрещён');
+  };
+}
+
+function requireLevel3(req,res,next){
+  if (getAdminLevel(req) >= 3) return next();
+
+  if (res.render) {
+    return res.status(403).render('error', {
+      title: 'Доступ запрещён',
+      message: 'Доступ только для администратора 3 уровня.'
+    });
+  }
+
+  return res.status(403).send('Доступ только для администратора 3 уровня');
+}
+
+module.exports = {
+  FEATURES,
+  DEFAULTS,
+  MENU,
+  FILE,
+  SUPER_ADMIN_EMAILS,
+  loadPermissions,
+  savePermissions,
+  currentUser,
+  getAdminLevel,
+  roleKeyByLevel,
+  can,
+  allowedMenu,
+  requireFeature,
+  requireLevel3
+};

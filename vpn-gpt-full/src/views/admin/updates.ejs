@@ -1,0 +1,35 @@
+<%- include('_layout_open') %>
+<h1>Обновления сайта</h1>
+<div class="grid2">
+  <div class="card">
+    <h2>Загрузить ZIP-обновление</h2>
+    <p class="muted">Загрузи архив новой версии. После загрузки можно запустить обновление вручную. Система делает бэкап, переносит <code>.env</code>, устанавливает зависимости, запускает миграции и перезапускает процесс.</p>
+    <form method="post" action="/admin/updates/upload?_csrf=<%= csrfToken %>" enctype="multipart/form-data">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>ZIP файл<input type="file" name="updateZip" accept=".zip" required></label>
+      <button>Загрузить</button>
+    </form>
+  </div>
+  <div class="card">
+    <h2>Управление</h2>
+    <p>Путь проекта: <b><%= projectDir %></b></p>
+    <p>Загруженный архив: <b><%= latestZipName || 'не загружен' %></b></p>
+    <div class="actions-wrap">
+      <form method="post" action="/admin/updates/run" class="inline-block">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="secondary">Применить обновление</button>
+      </form>
+      <form method="post" action="/admin/updates/restart-pm2" class="inline-block">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="ghost">Перезапустить PM2</button>
+      </form>
+    </div>
+    <p class="muted">Если после обновления нужен ручной рестарт приложения — используй кнопку перезапуска PM2.</p>
+  </div>
+</div>
+<br>
+<div class="card">
+  <h2>Последний вывод</h2>
+  <pre class="answer"><%= log || 'Пока обновлений не запускали.' %></pre>
+</div>
+<%- include('_layout_close') %>

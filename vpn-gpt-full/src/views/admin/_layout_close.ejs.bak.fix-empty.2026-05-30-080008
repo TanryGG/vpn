@@ -1,0 +1,4 @@
+  </section>
+</main>
+
+<%- include('../partials_footer') %>

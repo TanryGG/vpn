@@ -1,0 +1,35 @@
+<%- include('../partials_header') %>
+
+<span class="badge">Админ-панель</span>
+
+<main class="container admin-layout">
+  <aside class="card admin-sidebar">
+    <% const fallbackMenu = [
+      {label:'Обзор', href:'/admin'},
+      {label:'Пользователи', href:'/admin/users'},
+      {label:'Техподдержка', href:'/admin/support'},
+      {label:'Подписки', href:'/admin/subscriptions'},
+      {label:'Платежи', href:'/admin/payments'},
+      {label:'Тарифы', href:'/admin/plans'},
+      {label:'Промокоды', href:'/admin/promocodes'},
+      {label:'Рефералка', href:'/admin/referrals'},
+      {label:'VPN', href:'/admin/vpn'},
+      {label:'GPT статистика', href:'/admin/gpt'},
+      {label:'AI модели', href:'/admin/ai-models'},
+      {label:'Настройки', href:'/admin/settings'},
+      {label:'VDS автонастройка', href:'/admin/vds'},
+      {label:'Домен и HTTPS', href:'/admin/domain'},
+      {label:'Обновления', href:'/admin/updates'},
+      {label:'Telegram Proxy', href:'/admin/telegram-proxy'},
+      {label:'Разрешения', href:'/admin/permissions'},
+      {label:'Логи', href:'/admin/logs'}
+    ]; %>
+
+    <% const menuItems = (typeof adminMenu !== 'undefined' && adminMenu && adminMenu.length) ? adminMenu : fallbackMenu; %>
+
+    <% menuItems.forEach(function(item){ %>
+      <a href="<%= item.href %>"><%= item.label %></a>
+    <% }) %>
+  </aside>
+
+  <section class="admin-content">

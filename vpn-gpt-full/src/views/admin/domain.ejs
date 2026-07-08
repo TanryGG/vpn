@@ -1,0 +1,48 @@
+<%- include('_layout_open') %>
+<h1>Перенос на домен и HTTPS</h1>
+<p class="muted">Перед запуском создай A-запись домена на IP этого VDS. После настройки сайт откроется по HTTPS, а Happ-ссылки будут использовать домен вместо IP.</p>
+
+<div class="grid2">
+  <div class="card">
+    <h2>1. Настроить домен</h2>
+    <form method="post" action="/admin/domain/apply">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Домен без https://<input name="domain" value="<%= settings['app.domain'] || '' %>" placeholder="astragate.app" required></label>
+      <label>Email для Certbot<input name="email" value="<%= settings['admin.email'] || '' %>" placeholder="admin@astragate.app"></label>
+      <button>Настроить домен и HTTPS</button>
+    </form>
+    <p class="muted">Скрипт настроит Apache, выпустит сертификат Certbot, сохранит <b>app.url</b>, <b>vpn.host</b>, <b>white_vpn.host</b> и перезапустит сайт.</p>
+  </div>
+
+  <div class="card">
+    <h2>2. Пересобрать Happ-ссылки</h2>
+    <p>Текущий домен: <b><%= settings['app.domain'] || 'не задан' %></b></p>
+    <p>URL сайта: <b><%= settings['app.url'] || 'не задан' %></b></p>
+    <p>Иконка: <b><%= settings['app.icon_url'] || '/img/app-icon.png' %></b></p>
+    <form method="post" action="/admin/domain/rebuild-links">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="secondary">Пересобрать Happ-ссылки на домен</button>
+    </form>
+    <p class="muted">После этого пользователям нужно заново импортировать QR/ссылку в Happ, чтобы вместо IP был домен.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Проверка DNS</h2>
+  <% if(last && last.domain){ %>
+    <div class="grid3">
+      <div class="stat">Домен<b><%= last.domain %></b></div>
+      <div class="stat">IP сервера<b><%= last.public_ip || '-' %></b></div>
+      <div class="stat">A-запись<b><%= last.domain_ip || '-' %></b></div>
+      <div class="stat">Сайт<b><%= last.app_url || '-' %></b></div>
+    </div>
+  <% } else { %>
+    <p class="muted">Пока перенос не запускался.</p>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>Лог переноса</h2>
+  <pre class="answer"><%= log || 'Лог пока пуст.' %></pre>
+</div>
+<%- include('_layout_close') %>

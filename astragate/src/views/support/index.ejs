@@ -1,0 +1,30 @@
+<%- include('../partials_header') %>
+<div class="support-page">
+  <div class="support-hero">
+    <div>
+      <div class="eyebrow">Центр поддержки</div>
+      <h1>Техподдержка</h1>
+      <p class="muted">Создавай тикеты и отслеживай ответы администрации.</p>
+    </div>
+    <a class="button" href="/support/new">Новый тикет</a>
+  </div>
+
+  <div class="support-ticket-list">
+    <% tickets.forEach(t=>{ %>
+      <a class="support-ticket-card" href="/support/<%= t.id %>">
+        <div>
+          <div class="support-ticket-title">#<%= t.id %> · <%= t.subject %></div>
+          <div class="muted">Обновлён: <%= t.updated_at %></div>
+        </div>
+        <div class="support-ticket-meta">
+          <span class="pill"><%= label('support', t.status) %></span>
+          <span class="pill"><%= t.priority %></span>
+        </div>
+      </a>
+    <% }) %>
+    <% if(!tickets.length){ %>
+      <div class="card empty-state"><h2>Тикетов пока нет</h2><p class="muted">Создай первое обращение, если нужна помощь.</p><a class="button" href="/support/new">Создать тикет</a></div>
+    <% } %>
+  </div>
+</div>
+<%- include('../partials_footer') %>

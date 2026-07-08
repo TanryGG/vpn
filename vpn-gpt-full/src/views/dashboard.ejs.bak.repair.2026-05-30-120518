@@ -1,0 +1,38 @@
+<%- include('partials_header') %>
+<section class="page-head">
+  
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="staff-telegram">
+  <div class="card">
+    <h2>Telegram</h2>
+    <p class="muted">Привяжи Telegram, чтобы пользоваться ботом AstraGate: VPN, GPT, продление, промокоды и поддержка. Сотрудникам дополнительно приходят уведомления.</p>
+    <% if(profile.telegram_chat_id){ %>
+      <div class="status-card ok-soft">
+        <b>Telegram привязан</b>
+        <span>Chat ID: <%= profile.telegram_chat_id %></span>
+        <span>Привязан: <%= profile.telegram_linked_at || '-' %></span>
+      </div>
+      <form method="post" action="/profile/telegram-unlink">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="danger">Отвязать Telegram</button>
+      </form>
+    <% } else { %>
+      <ol class="steps-list">
+        <li>Открой Telegram-бота проекта.</li>
+        <li>Напиши боту <code>/start</code> или <code>/code</code>.</li>
+        <li>Скопируй 6-значный код и вставь ниже.</li>
+      </ol>
+      <form method="post" action="/profile/telegram-bind" class="form-grid compact-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Код из Telegram-бота<input name="telegram_code" inputmode="numeric" pattern="[0-9]{6}" placeholder="123456" required></label>
+        <button>Привязать Telegram</button>
+      </form>
+      <p class="muted">Код действует 15 минут. После привязки напиши боту /menu.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials_checkout_modal') %>
+<%- include('partials_footer') %>

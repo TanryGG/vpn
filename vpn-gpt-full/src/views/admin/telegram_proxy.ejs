@@ -1,0 +1,61 @@
+<%- include('_layout_open') %>
+
+<h1>Telegram Proxy</h1>
+<p class="muted">Статистика MTProto-прокси, состояние порта, последние события Dante и автонастройка.</p>
+
+<div class="stats admin-stats-expanded">
+  <div class="stat">
+    Статус
+    <b><%= tp.listen ? 'работает' : 'не слушает порт' %></b>
+    <small><%= tp.host || 'astragate.su' %>:<%= tp.port || '8445' %></small>
+  </div>
+  <div class="stat">
+    Подключения 24ч
+    <b><%= tp.connections24 || 0 %></b>
+    <small>по журналу danted</small>
+  </div>
+  <div class="stat">
+    Ошибки пароля 24ч
+    <b><%= tp.authFails24 || 0 %></b>
+    <small>system auth failed</small>
+  </div>
+  <div class="stat">
+    Логин
+    <b>
+    <small>MTProto</small>
+  </div>
+</div>
+
+<div class="card" style="margin-top:22px;">
+  <h2>Автонастройка</h2>
+  <form method="post" action="/admin/telegram-proxy/autosetup" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+    <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% } %>
+    <label>Host<input name="host" value="<%= tp.host || 'astragate.su' %>"></label>
+    <label>Port<input name="port" value="<%= tp.port || '8445' %>"></label>
+    <label>Password
+    <button class="button" type="submit">Автонастройка Telegram Proxy</button>
+    <a class="button secondary" href="/telegram-proxy" target="_blank">Открыть страницу прокси</a>
+  </form>
+</div>
+
+<div class="card" style="margin-top:22px;">
+  <h2>Порты</h2>
+  <% if (tp.listenLine) { %>
+    <pre style="white-space:pre-wrap;max-height:180px;overflow:auto;"><%= tp.listenLine %></pre>
+  <% } else { %>
+    <p class="muted">Нет данных по портам.</p>
+  <% } %>
+</div>
+
+<div class="card" style="margin-top:22px;">
+  <h2>Последние события Dante</h2>
+  <% if (tp.lastLines && tp.lastLines.length) { %>
+    <pre style="white-space:pre-wrap;max-height:320px;overflow:auto;"><%= tp.lastLines.join('\n') %></pre>
+  <% } else { %>
+    <p class="muted">Пока нет событий.</p>
+  <% } %>
+</div>
+
+<%- include('_layout_close') %>

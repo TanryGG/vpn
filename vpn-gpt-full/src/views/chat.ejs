@@ -1,0 +1,162 @@
+<%- include('partials_header') %>
+<div class="chat-layout pro-chat-layout">
+  <aside class="chat-sidebar card pro-chat-sidebar">
+    <div class="chat-sidebar-head">
+      <div>
+        <span class="eyebrow">История</span>
+        <h2>Чаты</h2>
+      </div>
+      <form method="post" action="/chat/new">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="ghost compact-btn">Новый</button>
+      </form>
+    </div>
+    <div class="chat-list">
+      <% chats.forEach(c=>{ %>
+        <a class="chat-link <%= activeChat && c.id===activeChat.id ? 'active' : '' %>" href="/chat/<%= c.id %>">
+          <b><%= c.title %></b>
+          <span><%= c.last_message ? c.last_message.slice(0,70) : 'Пустой чат' %></span>
+        </a>
+      <% }) %>
+    </div>
+  </aside>
+
+  <section class="card chat-panel pro-chat-panel">
+    <div class="chat-top pro-chat-top">
+      <div>
+        <span class="eyebrow">AI workspace</span>
+        <h1><%= activeChat.title %></h1>
+        <p class="muted">Сообщения, файлы, архивы и выбор модели в одном чате.</p>
+      </div>
+      <div class="chat-actions">
+        <form method="post" action="/chat/<%= activeChat.id %>/rename" class="rename-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input name="title" value="<%= activeChat.title %>" maxlength="190">
+          <button class="secondary">Сохранить</button>
+        </form>
+        <form method="post" action="/chat/<%= activeChat.id %>/delete" onsubmit="return confirm('Удалить чат?')">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="danger">Удалить</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="messages pro-messages">
+      <% messages.forEach(m=>{ const related = files.filter(f=>f.message_id===m.id); %>
+        <div class="msg <%= m.role %>">
+          <div class="msg-role"><%= m.role === 'user' ? 'Вы' : (m.model || 'AI') %></div>
+          <div class="msg-content"><%= m.content %></div>
+          <% if(m.charged_tokens){ %><div class="muted token-line">Списано токенов: <%= m.charged_tokens %></div><% } %>
+          <% if(related.length){ %>
+            <div class="file-list">
+              <% related.forEach(f=>{ %><a href="/files/<%= f.id %>/download"><%= f.role==='assistant' ? 'Скачать ответ' : f.original_name %></a><% }) %>
+            </div>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+
+    <form method="post" action="/chat/<%= activeChat.id %>?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="chat-form pro-chat-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div class="model-picker" id="modelPicker">
+        <input type="hidden" name="model_code" id="modelCode" value="<%= models[0] ? models[0].code : '' %>">
+        <div class="model-picker-head">
+          <div>
+            <label class="clean-label">Модель</label>
+            <button type="button" class="model-current" id="modelCurrent">
+              <span class="model-current-name"><%= models[0] ? models[0].name : 'Модель не настроена' %></span>
+              <span class="model-current-meta"><%= models[0] ? `${models[0].provider} · ×${models[0].token_multiplier} · контекст ${models[0].context_tokens}` : '' %></span>
+            </button>
+          </div>
+          <div class="model-tools">
+            <input id="modelSearch" class="model-search" placeholder="Поиск модели">
+            <div class="model-filters">
+              <button type="button" class="active" data-filter="all">Все</button>
+              <button type="button" data-filter="openai">OpenAI</button>
+              <button type="button" data-filter="google">Google</button>
+              <button type="button" data-filter="code">Code</button>
+              <button type="button" data-filter="audio">Audio</button>
+            </div>
+          </div>
+        </div>
+        <div class="model-menu" id="modelMenu">
+          <% models.forEach((m,i)=>{ %>
+            <button type="button" class="model-option <%= i===0 ? 'selected' : '' %>"
+              data-code="<%= m.code %>"
+              data-name="<%= m.name %>"
+              data-provider="<%= m.provider %>"
+              data-cap="<%= m.capabilities || '' %>"
+              data-mult="<%= m.token_multiplier %>"
+              data-context="<%= m.context_tokens %>"
+              data-search="<%= (m.name + ' ' + m.provider + ' ' + (m.capabilities||'')).toLowerCase() %>">
+              <span class="mo-main">
+                <b><%= m.name %></b>
+                <small><%= m.provider %> · <%= m.capabilities || 'Text' %></small>
+              </span>
+              <span class="mo-price">
+                <b>×<%= m.token_multiplier %></b>
+                <small>коэффициент списания</small>
+              </span>
+              <span class="mo-context"><%= m.context_tokens %> ctx</span>
+            </button>
+          <% }) %>
+        </div>
+      </div>
+
+      <textarea name="message" placeholder="Напиши сообщение. Можно прикрепить фото, TXT/CSV/JSON/PDF или ZIP-архив."></textarea>
+      <label class="file-input pro-file-input">
+        <span>Файлы</span>
+        <small>Фото, документы и ZIP до 50 MB, максимум 10 шт.</small>
+        <input type="file" name="files" multiple>
+      </label>
+      <div class="composer-actions">
+        <button>Отправить</button>
+        <span class="muted">Стоимость списания зависит от выбранной модели.</span>
+      </div>
+    </form>
+  </section>
+</div>
+
+<script>
+(function(){
+  const picker = document.getElementById('modelPicker');
+  if(!picker) return;
+  const current = document.getElementById('modelCurrent');
+  const code = document.getElementById('modelCode');
+  const menu = document.getElementById('modelMenu');
+  const search = document.getElementById('modelSearch');
+  const filterButtons = picker.querySelectorAll('.model-filters button');
+  const options = Array.from(picker.querySelectorAll('.model-option'));
+  let activeFilter = 'all';
+  function applyFilter(){
+    const q = (search.value || '').trim().toLowerCase();
+    options.forEach(o=>{
+      const hay = o.dataset.search || '';
+      const provider = (o.dataset.provider || '').toLowerCase();
+      const cap = (o.dataset.cap || '').toLowerCase();
+      const byText = !q || hay.includes(q);
+      const byFilter = activeFilter === 'all' || provider.includes(activeFilter) || cap.includes(activeFilter);
+      o.style.display = byText && byFilter ? '' : 'none';
+    });
+  }
+  current.addEventListener('click',()=>picker.classList.toggle('open'));
+  search.addEventListener('input',applyFilter);
+  filterButtons.forEach(btn=>btn.addEventListener('click',()=>{
+    filterButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    applyFilter();
+  }));
+  options.forEach(o=>o.addEventListener('click',()=>{
+    options.forEach(x=>x.classList.remove('selected'));
+    o.classList.add('selected');
+    code.value = o.dataset.code;
+    current.querySelector('.model-current-name').textContent = o.dataset.name;
+    current.querySelector('.model-current-meta').textContent = `${o.dataset.provider} · ×${o.dataset.mult} · контекст ${o.dataset.context}`;
+    picker.classList.remove('open');
+  }));
+  document.addEventListener('click',(e)=>{ if(!picker.contains(e.target)) picker.classList.remove('open'); });
+})();
+</script>
+<%- include('partials_footer') %>

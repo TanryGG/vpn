@@ -1,0 +1,39 @@
+<%- include('../partials_header') %>
+<div class="support-page">
+  <div class="support-hero">
+    <div>
+      <div class="eyebrow">Техподдержка</div>
+      <h1>Новый тикет</h1>
+      <p class="muted">Создай обращение, если нужна помощь с оплатой, VPN, GPT или аккаунтом.</p>
+    </div>
+    <a class="button ghost" href="/support">Все тикеты</a>
+  </div>
+
+  <div class="support-new-wrap card wide">
+    <form method="post" action="/support/new?_csrf=<%= encodeURIComponent(csrfToken) %>" enctype="multipart/form-data" class="support-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="form-grid">
+        <label>Тема
+          <input name="subject" required placeholder="Например: не работает VPN">
+        </label>
+        <label>Приоритет
+          <select name="priority">
+            <option value="low">Низкий</option>
+            <option value="normal" selected>Обычный</option>
+            <option value="high">Высокий</option>
+            <option value="urgent">Срочный</option>
+          </select>
+        </label>
+      </div>
+      <label>Сообщение
+        <textarea name="message" required placeholder="Опиши проблему подробнее..."></textarea>
+      </label>
+      <label>Файлы
+        <input type="file" name="files" multiple>
+        <small class="muted">Можно приложить скриншоты, чеки или логи.</small>
+      </label>
+      <button>Создать тикет</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials_footer') %>

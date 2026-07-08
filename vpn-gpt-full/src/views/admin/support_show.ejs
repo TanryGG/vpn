@@ -1,0 +1,48 @@
+<%- include('_layout_open') %>
+<div class="support-page admin-support-page">
+  <div class="support-hero">
+    <div>
+      <div class="eyebrow">Тикет пользователя</div>
+      <h1>Тикет #<%= ticket.id %></h1>
+      <p class="muted"><%= ticket.subject %> · <%= ticket.email %></p>
+    </div>
+    <a class="button ghost" href="/admin/support">Назад</a>
+  </div>
+
+  <div class="support-layout">
+    <section class="support-main card">
+      <div class="support-thread-header">
+        <div><h2>Переписка</h2><p class="muted">Внутренние заметки видны только сотрудникам.</p></div>
+        <span class="pill"><%= label('support', ticket.status) %></span>
+      </div>
+      <div class="support-thread clean-thread">
+        <% messages.forEach(m=>{ %>
+          <article class="support-message <%= m.is_internal?'internal':(m.sender_role==='staff'?'staff':'user') %>">
+            <div class="support-msg-head"><b><%= m.is_internal ? ('Внутренняя заметка: ' + (m.name || m.email || 'сотрудник')) : (m.sender_role==='staff' ? ('Сотрудник: ' + (m.name || m.email || 'Поддержка')) : 'Пользователь') %></b><small><%= m.created_at %></small></div>
+            <p><%= m.message %></p>
+          </article>
+        <% }) %>
+      </div>
+    </section>
+
+    <aside class="support-reply card">
+      <h2>Ответить</h2>
+      <form method="post" action="/admin/support/<%= ticket.id %>/reply" class="support-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <textarea name="message" required placeholder="Ответ пользователю или заметка..."></textarea>
+        <label class="checkline"><input type="checkbox" name="is_internal"> Внутренняя заметка</label>
+        <button>Отправить</button>
+      </form>
+      <hr>
+      <h2>Статус</h2>
+      <form method="post" action="/admin/support/<%= ticket.id %>/status" class="support-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Статус<select name="status"><option value="open" <%= ticket.status==='open'?'selected':'' %>>Открыт</option><option value="pending" <%= ticket.status==='pending'?'selected':'' %>>В работе</option><option value="answered" <%= ticket.status==='answered'?'selected':'' %>>Отвечен</option><option value="closed" <%= ticket.status==='closed'?'selected':'' %>>Закрыт</option></select></label>
+        <label>Приоритет<select name="priority"><option value="low" <%= ticket.priority==='low'?'selected':'' %>>Низкий</option><option value="normal" <%= ticket.priority==='normal'?'selected':'' %>>Обычный</option><option value="high" <%= ticket.priority==='high'?'selected':'' %>>Высокий</option><option value="urgent" <%= ticket.priority==='urgent'?'selected':'' %>>Срочный</option></select></label>
+        <input type="hidden" name="assigned_to" value="<%= ticket.assigned_to || '' %>">
+        <button class="secondary">Сохранить статус</button>
+      </form>
+    </aside>
+  </div>
+</div>
+<%- include('_layout_close') %>

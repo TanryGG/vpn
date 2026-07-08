@@ -1,0 +1,52 @@
+<%- include('_layout_open') %>
+<span class="badge">Админ-панель</span>
+<h1>Обзор проекта</h1>
+
+<div class="stats admin-stats-expanded">
+  <div class="stat">Пользователи<b><%= stats.users %></b><small>Сегодня: <%= stats.usersToday %></small></div>
+  <div class="stat">Активные подписки<b><%= stats.activeSubs %></b><small>VPN/GPT/White</small></div>
+  <div class="stat">Оплачено всего<b><%= stats.paid %></b><small>RUB/crypto по базе</small></div>
+  <div class="stat">Сегодня<b><%= stats.paidToday %></b><small>оплачено за день</small></div>
+  <div class="stat">За месяц<b><%= stats.paidMonth %></b><small>с 1 числа</small></div>
+  <div class="stat">YooMoney<b><%= stats.yoomoneyPaid %></b><small>оплачено</small></div>
+  <div class="stat">CryptoBot<b><%= stats.cryptoPaid %></b><small>оплачено</small></div>
+  <div class="stat">Ожидают оплаты<b><%= stats.pending %></b><small>pending</small></div>
+  <div class="stat">GPT токены<b><%= stats.tokens %></b><small>использовано</small></div>
+  <div class="stat">VPN аккаунты<b><%= stats.vpn %></b><small>Main: <%= stats.vpnMain %> · White: <%= stats.vpnWhite %></small></div>
+  <div class="stat">Открытые тикеты<b><%= stats.openTickets %></b><small>нужна реакция</small></div>
+  <div class="stat">Отвеченные тикеты<b><%= stats.answeredTickets %></b><small>ожидают пользователя</small></div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Быстрые действия</h2>
+    <a class="button" href="/admin/settings">Настройки оплат и VPN</a>
+    <a class="button secondary" href="/admin/updates">Загрузить обновление</a>
+    <a class="button ghost" href="/admin/users">Выдать подписку</a>
+    <a class="button ghost" href="/admin/support">Техподдержка</a>
+  </div>
+  <div class="card">
+    <h2>Последние тикеты</h2>
+    <div class="table-wrap"><table>
+      <tr><th>ID</th><th>Пользователь</th><th>Тема</th><th>Статус</th></tr>
+      <% (tickets||[]).forEach(t=>{ %>
+        <tr><td>#<%= t.id %></td><td><%= t.email || '-' %></td><td><a href="/admin/support/<%= t.id %>"><%= t.subject %></a></td><td><%= t.status %></td></tr>
+      <% }) %>
+    </table></div>
+  </div>
+</div>
+
+
+
+
+
+<div class="card">
+  <h2>Последние платежи</h2>
+  <div class="table-wrap"><table>
+    <tr><th>ID</th><th>Email</th><th>Тариф</th><th>Сумма</th><th>Статус</th></tr>
+    <% payments.forEach(p=>{ %>
+      <tr><td><%= p.id %></td><td><%= p.email || '-' %></td><td><%= p.plan_name || '-' %></td><td><%= p.amount %> <%= p.currency %></td><td><%= p.status %></td></tr>
+    <% }) %>
+  </table></div>
+</div>
+<%- include('_layout_close') %>

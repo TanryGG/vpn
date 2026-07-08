@@ -1,0 +1,56 @@
+<%- include('../partials_header') %>
+<div class="support-page">
+  <div class="support-hero">
+    <div>
+      <div class="eyebrow">Техподдержка</div>
+      <h1>Тикет #<%= ticket.id %></h1>
+      <p class="muted support-subject"><%= ticket.subject %></p>
+    </div>
+    <form method="post" action="/support/<%= ticket.id %>/close">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="ghost support-close-btn">Закрыть тикет</button>
+    </form>
+  </div>
+
+  <div class="support-layout">
+    <section class="support-main card">
+      <div class="support-thread-header">
+        <div>
+          <h2>Переписка</h2>
+          <p class="muted">Все сообщения по обращению хранятся здесь.</p>
+        </div>
+        <span class="pill"><%= label('support', ticket.status || 'open') %></span>
+      </div>
+
+      <div class="support-thread clean-thread">
+        <% messages.forEach(m=>{ if(m.is_internal) return; %>
+          <article class="support-message <%= m.sender_role==='staff'?'staff':'user' %>">
+            <div class="support-msg-head">
+              <b><%= m.sender_role==='staff' ? ('Сотрудник: ' + (m.name || m.email || 'Поддержка')) : 'Вы' %></b>
+              <small><%= m.created_at %></small>
+            </div>
+            <p><%= m.message %></p>
+          </article>
+        <% }) %>
+        <% if(!messages.length){ %><p class="muted">Сообщений пока нет.</p><% } %>
+      </div>
+    </section>
+
+    <aside class="support-reply card">
+      <h2>Ответить</h2>
+      <p class="muted">Опиши проблему или приложи файлы. Поддержка увидит ответ в админке.</p>
+      <form method="post" action="/support/<%= ticket.id %>/reply?_csrf=<%= encodeURIComponent(csrfToken) %>" enctype="multipart/form-data" class="support-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label>Сообщение
+          <textarea name="message" required placeholder="Напишите ответ..."></textarea>
+        </label>
+        <label>Файлы
+          <input type="file" name="files" multiple>
+          <small class="muted">Можно приложить скриншоты или документы.</small>
+        </label>
+        <button>Отправить</button>
+      </form>
+    </aside>
+  </div>
+</div>
+<%- include('../partials_footer') %>

@@ -1,0 +1,71 @@
+
+<div class="checkout-modal" id="checkoutModal" aria-hidden="true">
+  <div class="checkout-backdrop" data-close-checkout></div>
+  <div class="checkout-panel" role="dialog" aria-modal="true">
+    <button class="checkout-close" type="button" data-close-checkout>×</button>
+    <div class="eyebrow">Оформление подписки</div>
+    <h2 id="checkoutTitle">Тариф</h2>
+    <p class="muted" id="checkoutDescription"></p>
+    <div class="checkout-summary">
+      <div><span>Период</span><b id="checkoutDays">—</b></div>
+      <div><span>Стоимость</span><b id="checkoutPrice">—</b></div>
+      <div><span>Тип</span><b id="checkoutType">—</b></div>
+      <div><span>Устройства</span><b id="checkoutDevices">—</b></div>
+      <div><span>Трафик</span><b id="checkoutTraffic">—</b></div>
+    </div>
+    <label>Промокод
+      <input id="checkoutPromo" placeholder="Введите промокод, если есть" autocomplete="off">
+    </label>
+    <div class="pay-methods">
+      <form method="post" id="payYooForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="promo_code" class="promo-hidden">
+        <button type="submit">Оплатить YooMoney</button>
+      </form>
+      <form method="post" id="payCryptoForm">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="promo_code" class="promo-hidden">
+        <button type="submit" class="secondary">Оплатить CryptoBot</button>
+      </form>
+    </div>
+    <p class="muted small-text">Промокод применяется при создании платежа. После оплаты подписка активируется автоматически или вручную админом.</p>
+  </div>
+</div>
+<script>
+(function(){
+  const modal = document.getElementById('checkoutModal');
+  if(!modal) return;
+  const promo = document.getElementById('checkoutPromo');
+  const hidden = modal.querySelectorAll('.promo-hidden');
+  const yform = document.getElementById('payYooForm');
+  const cform = document.getElementById('payCryptoForm');
+  const typeLabels = {vpn:'VPN', gpt:'GPT', combo:'VPN + GPT', white_vpn:'White VPN'};
+  function openCheckout(btn){
+    const d = btn.dataset;
+    document.getElementById('checkoutTitle').textContent = d.name || 'Тариф';
+    document.getElementById('checkoutDescription').textContent = d.description || '';
+    document.getElementById('checkoutDays').textContent = (d.days || '—') + ' дн.';
+    document.getElementById('checkoutPrice').textContent = (d.price || '0') + ' ' + (d.currency || 'RUB');
+    document.getElementById('checkoutType').textContent = typeLabels[d.type] || d.type || 'тариф';
+    document.getElementById('checkoutDevices').textContent = d.devices && d.devices !== '0' ? d.devices + ' устр.' : '—';
+    const tr = document.getElementById('checkoutTraffic'); if(tr) tr.textContent = d.traffic && d.traffic !== '0' ? d.traffic + ' GB' : (d.devices && d.devices !== '0' ? 'без лимита' : '—');
+    yform.action = '/pay/yoomoney/' + d.planId;
+    cform.action = '/pay/cryptobot/' + d.planId;
+    promo.value = '';
+    hidden.forEach(i=>i.value='');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('modal-open');
+    setTimeout(()=>promo.focus(),50);
+  }
+  function closeCheckout(){
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('modal-open');
+  }
+  document.querySelectorAll('[data-open-checkout]').forEach(btn=>btn.addEventListener('click',()=>openCheckout(btn)));
+  document.querySelectorAll('[data-close-checkout]').forEach(btn=>btn.addEventListener('click',closeCheckout));
+  promo.addEventListener('input',()=>hidden.forEach(i=>i.value=promo.value.trim()));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape') closeCheckout();});
+})();
+</script>

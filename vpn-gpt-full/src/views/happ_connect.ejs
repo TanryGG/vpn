@@ -1,0 +1,54 @@
+<%- include('partials_header') %>
+<section class="page-head">
+  <div>
+    <span class="badge">Happ</span>
+    <h1>Подключение Happ</h1>
+    <p class="muted">Нажми кнопку подключения. Если приложение не добавит подписку автоматически, ссылка уже будет в буфере: открой Happ → + → Из буфера.</p>
+  </div>
+</section>
+
+<div class="grid">
+  <div class="card connect-card">
+    <h2><%= vpnTitle %></h2>
+    <p class="muted">URL подписки</p>
+    <textarea class="copybox" id="subUrl" readonly><%= subUrl %></textarea>
+
+    <% if(qr){ %><img class="qr" src="<%= qr %>" alt="QR"><% } %>
+
+    <div class="actions-wrap happ-actions">
+      <button type="button" class="button" id="openHappBtn">Открыть и вставить в Happ</button>
+      <button type="button" class="button ghost" id="copyBtn">Скопировать ссылку</button>
+      <a class="button ghost" href="<%= subUrl %>" target="_blank" rel="noopener">Проверить URL</a>
+    </div>
+
+    <details class="mt-2">
+      <summary class="muted">Запасной VLESS</summary>
+      <textarea class="copybox" id="plainUrl" readonly><%= plainSubUrl || (subUrl + '/plain') %></textarea>
+      <button type="button" class="button secondary" id="copyPlainBtn">Скопировать VLESS</button>
+    </details>
+
+    <div class="alert ok" id="copyOk" style="display:none">Скопировано.</div>
+  </div>
+</div>
+
+<script>
+const subUrl = <%- JSON.stringify(subUrl) %>;
+const plainUrl = <%- JSON.stringify(plainSubUrl || (subUrl + '/plain')) %>;
+const msg = document.getElementById('copyOk');
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const t=document.createElement('textarea');
+    t.value=text; document.body.appendChild(t); t.focus(); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+  }
+  if(msg) msg.style.display='block';
+}
+document.getElementById('copyBtn')?.addEventListener('click', ()=>copyText(subUrl));
+document.getElementById('copyPlainBtn')?.addEventListener('click', ()=>copyText(plainUrl));
+document.getElementById('openHappBtn')?.addEventListener('click', async ()=>{
+  await copyText(subUrl);
+  // Happ использует happ://add/<subscription_url>. Дублируем копированием в буфер как fallback.
+  setTimeout(()=>{ window.location.href = 'happ://add/' + subUrl; }, 250);
+});
+</script>
+<%- include('partials_footer') %>

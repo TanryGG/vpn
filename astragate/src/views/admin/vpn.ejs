@@ -1,0 +1,30 @@
+<%- include('_layout_open') %>
+<h1>VPN аккаунты</h1>
+<p class="muted">Обычный VPN и White VPN хранятся как отдельные Happ-ссылки. Их можно пересобрать отдельно.</p>
+<div class="grid3">
+  <form method="post" action="/admin/vpn/test-xui" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><h2>Проверка сервера</h2><p class="muted">Проверит локальный Xray или 3x-ui.</p><button>Проверить</button></form>
+  <form method="post" action="/admin/vpn/rebuild-links" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="account_type" value="main"><h2>Пересобрать VPN</h2><p class="muted">Обновит обычные Happ-ссылки.</p><button>Пересобрать обычные</button></form>
+  <form method="post" action="/admin/vpn/rebuild-links" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="account_type" value="white"><h2>Пересобрать White VPN</h2><p class="muted">Обновит отдельные White VPN-ссылки.</p><button>Пересобрать White</button></form>
+  <form method="post" action="/admin/vpn/sync-access" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><h2>Отключить неоплаченных</h2><p class="muted">Удалит клиентов без активной VPN/White VPN-подписки из Xray и Happ-ссылки пометит как неоплаченные.</p><button class="danger">Синхронизировать доступ</button></form>
+  <form method="post" action="/admin/vpn/repair-dual-vpn" class="card"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><h2>Починить оба VPN</h2><p class="muted">Пересоберёт обычный VPN и White VPN как два отдельных inbound и восстановит клиентов по активным подпискам.</p><button class="secondary">Починить VPN + White</button></form>
+</div>
+<br>
+<div class="card"><h2>Собрать ссылку пользователю</h2><form method="post" action="/admin/vpn/create-for-user" class="form-grid"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><label>ID пользователя<input name="user_id" required></label><label>Тип<select name="account_type"><option value="main">Обычный VPN</option><option value="white">White VPN</option></select></label><button>Собрать Happ-ссылку</button></form></div>
+<br>
+<div class="table-wrap"><table>
+<tr><th>ID</th><th>Тип</th><th>Пользователь</th><th>Название в Happ</th><th>Внутренний label</th><th>UUID</th><th>Ссылка</th><th>Статус</th><th>Создан</th></tr>
+<% accounts.forEach(v=>{ %>
+<tr>
+  <td><%= v.id %></td>
+  <td><span class="pill"><%= v.account_type === 'white' ? 'White VPN' : 'VPN' %></span></td>
+  <td><%= v.email || v.name || v.user_id %></td>
+  <td><%= v.server_label || '-' %></td>
+  <td><%= v.email_label %></td>
+  <td><code><%= v.uuid %></code></td>
+  <td><textarea class="copybox small" readonly><%= v.vless_url %></textarea></td>
+  <td><%= label('status', v.status) %></td>
+  <td><%= v.created_at %></td>
+</tr>
+<% }) %>
+</table></div>
+<%- include('_layout_close') %>

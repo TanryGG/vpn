@@ -1,0 +1,231 @@
+const fs = require('fs');
+const FILE = '/root/astragate/admin-permissions.json';
+
+const FEATURES = {
+  overview: 'Обзор',
+  users: 'Пользователи',
+  support: 'Техподдержка',
+  subscriptions: 'Подписки',
+  payments: 'Платежи',
+  tariffs: 'Тарифы',
+  promocodes: 'Промокоды',
+  referrals: 'Рефералка',
+  vpn: 'VPN',
+  gpt_stats: 'GPT статистика',
+  ai_models: 'AI модели',
+  settings: 'Настройки',
+  vds: 'VDS автонастройка',
+  domain_https: 'Домен и HTTPS',
+  updates: 'Обновления',
+  telegram_proxy: 'Telegram Proxy',
+  permissions: 'Разрешения',
+  logs: 'Логи'
+};
+
+const MENU = [
+  {key:'overview', label:'Обзор', href:'/admin'},
+  {key:'users', label:'Пользователи', href:'/admin/users'},
+  {key:'support', label:'Техподдержка', href:'/admin/support'},
+  {key:'subscriptions', label:'Подписки', href:'/admin/subscriptions'},
+  {key:'payments', label:'Платежи', href:'/admin/payments'},
+  {key:'tariffs', label:'Тарифы', href:'/admin/plans'},
+  {key:'promocodes', label:'Промокоды', href:'/admin/promocodes'},
+  {key:'referrals', label:'Рефералка', href:'/admin/referrals'},
+  {key:'vpn', label:'VPN', href:'/admin/vpn'},
+  {key:'gpt_stats', label:'GPT статистика', href:'/admin/gpt'},
+  {key:'ai_models', label:'AI модели', href:'/admin/ai-models'},
+  {key:'settings', label:'Настройки', href:'/admin/settings'},
+  {key:'vds', label:'VDS автонастройка', href:'/admin/vds'},
+  {key:'domain_https', label:'Домен и HTTPS', href:'/admin/domain'},
+  {key:'updates', label:'Обновления', href:'/admin/updates'},
+  {key:'telegram_proxy', label:'Telegram Proxy', href:'/admin/telegram-proxy'},
+  {key:'permissions', label:'Разрешения', href:'/admin/permissions'},
+  {key:'logs', label:'Логи', href:'/admin/logs'}
+];
+
+const DEFAULTS = {
+  moderator: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:false, tariffs:false, promocodes:false, referrals:false,
+    vpn:false, gpt_stats:false, ai_models:false, settings:false,
+    vds:false, domain_https:false, updates:false, telegram_proxy:false,
+    permissions:false, logs:false
+  },
+  admin1: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:true, tariffs:false, promocodes:true, referrals:true,
+    vpn:true, gpt_stats:true, ai_models:false, settings:false,
+    vds:false, domain_https:false, updates:false, telegram_proxy:true,
+    permissions:false, logs:true
+  },
+  admin2: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:true, tariffs:true, promocodes:true, referrals:true,
+    vpn:true, gpt_stats:true, ai_models:true, settings:true,
+    vds:true, domain_https:true, updates:true, telegram_proxy:true,
+    permissions:false, logs:true
+  },
+  admin3: {
+    overview:true, users:true, support:true, subscriptions:true,
+    payments:true, tariffs:true, promocodes:true, referrals:true,
+    vpn:true, gpt_stats:true, ai_models:true, settings:true,
+    vds:true, domain_https:true, updates:true, telegram_proxy:true,
+    permissions:true, logs:true
+  }
+};
+
+const PATH_FEATURES = [
+  {prefix:'/users', feature:'users'},
+  {prefix:'/support', feature:'support'},
+  {prefix:'/subscriptions', feature:'subscriptions'},
+  {prefix:'/payments', feature:'payments'},
+  {prefix:'/plans', feature:'tariffs'},
+  {prefix:'/promocodes', feature:'promocodes'},
+  {prefix:'/referrals', feature:'referrals'},
+  {prefix:'/vpn', feature:'vpn'},
+  {prefix:'/gpt', feature:'gpt_stats'},
+  {prefix:'/ai-models', feature:'ai_models'},
+  {prefix:'/settings', feature:'settings'},
+  {prefix:'/vds', feature:'vds'},
+  {prefix:'/domain', feature:'domain_https'},
+  {prefix:'/updates', feature:'updates'},
+  {prefix:'/telegram-proxy', feature:'telegram_proxy'},
+  {prefix:'/permissions', feature:'permissions'},
+  {prefix:'/logs', feature:'logs'}
+];
+
+function loadPermissions(){
+  try {
+    if (!fs.existsSync(FILE)) fs.writeFileSync(FILE, JSON.stringify(DEFAULTS, null, 2));
+    const data = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    return {
+      moderator: {...DEFAULTS.moderator, ...(data.moderator || {})},
+      admin1: {...DEFAULTS.admin1, ...(data.admin1 || {})},
+      admin2: {...DEFAULTS.admin2, ...(data.admin2 || {})},
+      admin3: {...DEFAULTS.admin3, ...(data.admin3 || {})}
+    };
+  } catch(e) {
+    return DEFAULTS;
+  }
+}
+
+function savePermissions(data){
+  const clean = {};
+  for (const role of Object.keys(DEFAULTS)) {
+    clean[role] = {};
+    for (const key of Object.keys(FEATURES)) {
+      clean[role][key] = !!(data[role] && data[role][key]);
+    }
+  }
+
+  clean.admin3 = {...DEFAULTS.admin3, ...(clean.admin3 || {})};
+  clean.admin3.overview = true;
+  clean.admin3.permissions = true;
+
+  fs.writeFileSync(FILE, JSON.stringify(clean, null, 2));
+}
+
+function currentUser(req){
+  const session = req.session || {};
+  return req.user || req.admin || req.account || session.user || session.admin || session.account || {};
+}
+
+function getAdminLevel(req){
+  const u = currentUser(req);
+  const role = String(u.role || '').toLowerCase();
+
+  if (role === 'admin' || role === 'admin_l3' || role === 'admin3' || role === 'owner' || role === 'superadmin') return 3;
+  if (role === 'admin_l2' || role === 'admin2') return 2;
+  if (role === 'admin_l1' || role === 'admin1') return 1;
+  if (role === 'moderator' || role === 'moder') return 0;
+
+  const n = Number(u.admin_level ?? u.adminLevel ?? u.role_level ?? u.roleLevel ?? u.level);
+  if (n === 3) return 3;
+  if (n === 2) return 2;
+  if (n === 1) return 1;
+  if (n === 0) return 0;
+
+  return -1;
+}
+
+function roleKeyByLevel(level){
+  if (level >= 3) return 'admin3';
+  if (level === 2) return 'admin2';
+  if (level === 1) return 'admin1';
+  return 'moderator';
+}
+
+function can(req, feature){
+  const level = getAdminLevel(req);
+  if (level >= 3) return true;
+  if (level < 0) return false;
+
+  const roleKey = roleKeyByLevel(level);
+  const perms = loadPermissions();
+  return !!(perms[roleKey] && perms[roleKey][feature]);
+}
+
+function allowedMenu(req){
+  const level = getAdminLevel(req);
+  if (level >= 3) return MENU;
+  if (level < 0) return [];
+
+  const roleKey = roleKeyByLevel(level);
+  const perms = loadPermissions();
+  return MENU.filter(item => !!(perms[roleKey] && perms[roleKey][item.key]));
+}
+
+function featureByPath(path){
+  if (path === '/' || path === '') return 'overview';
+  const found = PATH_FEATURES.find(x => path === x.prefix || path.startsWith(x.prefix + '/'));
+  return found ? found.feature : null;
+}
+
+function requireFeature(feature){
+  return function(req,res,next){
+    if (can(req, feature)) return next();
+    return res.status(403).render('error', {
+      title: '403',
+      message: 'Эта вкладка недоступна для вашего уровня доступа.'
+    });
+  };
+}
+
+function protectAdminRoute(req,res,next){
+  const feature = featureByPath(req.path);
+  if (!feature) return next();
+  if (can(req, feature)) return next();
+
+  return res.status(403).render('error', {
+    title: '403',
+    message: 'Эта вкладка недоступна для вашего уровня доступа.'
+  });
+}
+
+function requireLevel3(req,res,next){
+  if (getAdminLevel(req) >= 3) return next();
+
+  return res.status(403).render('error', {
+    title: '403',
+    message: 'Доступ только для администратора 3 уровня.'
+  });
+}
+
+module.exports = {
+  FEATURES,
+  MENU,
+  DEFAULTS,
+  PATH_FEATURES,
+  FILE,
+  loadPermissions,
+  savePermissions,
+  currentUser,
+  getAdminLevel,
+  roleKeyByLevel,
+  can,
+  allowedMenu,
+  featureByPath,
+  requireFeature,
+  protectAdminRoute,
+  requireLevel3
+};

@@ -1,0 +1,106 @@
+<%- include('_layout_open') %>
+<div class="page-head">
+  <div>
+    <h1>Пользователи</h1>
+    <p class="muted">Выдавай несколько подписок одному пользователю: VPN, White VPN, GPT или combo. Здесь же можно отнимать отдельные подписки, отключать группы и пересобирать Happ-ссылки.</p>
+  </div>
+</div>
+
+<div class="admin-user-list">
+<% users.forEach(u=>{ const usubs = (subsByUser && subsByUser[u.id]) ? subsByUser[u.id] : []; %>
+  <section class="admin-user-card">
+    <div class="user-card-head">
+      <div class="user-main">
+        <div class="user-avatar"><%= (u.name || u.email || '?').slice(0,1).toUpperCase() %></div>
+        <div class="user-title">
+          <h2><%= u.name || 'Без имени' %></h2>
+          <p><%= u.email %></p>
+          <div class="user-meta">
+            <span>ID <%= u.id %></span>
+            <span><%= ({user:'Пользователь',moderator:'Модератор',admin_l1:'Админ 1 уровня',admin_l2:'Админ 2 уровня',admin_l3:'Админ 3 уровня',admin:'Админ 3 уровня'})[u.role] || u.role %></span>
+            <span><%= u.status === 'active' ? 'Активен' : 'Заблокирован' %></span>
+          </div>
+        </div>
+      </div>
+      <div class="user-quick-actions">
+        <form method="post" action="/admin/users/<%= u.id %>/vpn">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="account_type" value="main">
+          <button class="secondary">Собрать VPN</button>
+        </form>
+        <form method="post" action="/admin/users/<%= u.id %>/vpn">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="account_type" value="white">
+          <button class="secondary">Собрать White</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="user-admin-grid">
+      <div class="mini-card">
+        <h3>Доступ</h3>
+        <% if (typeof adminLevel !== 'undefined' && adminLevel >= 3) { %>
+<div class="two-col-form">
+          <form method="post" action="/admin/users/<%= u.id %>/role">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Роль<select name="role" <%= (typeof adminLevel !== "undefined" && adminLevel >= 3) ? "" : "disabled" %>><option value="user" <%= u.role==='user'?'selected':'' %>>Пользователь</option><option value="moderator" <%= u.role==='moderator'?'selected':'' %>>Модератор</option><option value="admin_l1" <%= u.role==='admin_l1'?'selected':'' %>>Админ 1 уровня</option><option value="admin_l2" <%= u.role==='admin_l2'?'selected':'' %>>Админ 2 уровня</option><option value="admin_l3" <%= (u.role==='admin_l3'||u.role==='admin')?'selected':'' %>>Админ 3 уровня</option></select></label>
+            <button>Сохранить роль</button>
+          </form>
+          <form method="post" action="/admin/users/<%= u.id %>/status">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <label>Статус<select name="status"><option value="active" <%= u.status==='active'?'selected':'' %>>Активен</option><option value="blocked" <%= u.status==='blocked'?'selected':'' %>>Заблокирован</option></select></label>
+            <button>Сохранить статус</button>
+          </form>
+        </div>
+<% } %>
+      </div>
+
+      <div class="mini-card">
+        <h3>Активные подписки</h3>
+        <% if(!usubs.length){ %>
+          <p class="muted">Активных подписок нет.</p>
+        <% } %>
+        <div class="subs-grid-admin">
+        <% usubs.forEach(s=>{ %>
+          <div class="sub-chip clean-sub-chip">
+            <div class="sub-chip-top">
+              <b><%= s.plan_name %></b>
+              <span><%= s.white_vpn_enabled ? 'White VPN' : (s.plan_kind === 'gpt' ? 'GPT' : (s.plan_kind === 'vpn' ? 'VPN' : 'Combo')) %></span>
+            </div>
+            <small><%= s.device_limit || 1 %> устр. · до <%= s.ends_at %></small>
+            <form method="post" action="/admin/subscriptions/<%= s.id %>/cancel">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="danger smallbtn">Отнять эту подписку</button>
+            </form>
+          </div>
+        <% }) %>
+        </div>
+      </div>
+
+      <div class="mini-card">
+        <h3>Выдать подписки</h3>
+        <form method="post" action="/admin/users/<%= u.id %>/grant" class="grant-form-clean">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Выбери один или несколько тарифов
+            <select name="plan_id" multiple size="7">
+              <% plans.forEach(p=>{ %><option value="<%= p.id %>"><%= p.name %> · <%= p.days %> дн. · <%= p.device_limit || 1 %> устр.</option><% }) %>
+            </select>
+          </label>
+          <button>Выдать выбранные</button>
+        </form>
+      </div>
+
+      <div class="mini-card">
+        <h3>Отнять группу</h3>
+        <p class="muted small-text">Можно отключить только нужный тип подписок, не трогая остальные.</p>
+        <form method="post" action="/admin/users/<%= u.id %>/cancel-subs" class="group-cancel-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <label>Что отключить<select name="mode"><option value="all">Все подписки</option><option value="vpn">Только обычный VPN</option><option value="white">Только White VPN</option><option value="gpt">Только GPT</option></select></label>
+          <button class="danger">Отнять выбранную группу</button>
+        </form>
+      </div>
+    </div>
+  </section>
+<% }) %>
+</div>
+<%- include('_layout_close') %>

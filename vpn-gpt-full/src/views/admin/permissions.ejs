@@ -1,0 +1,55 @@
+<%- include('_layout_open') %>
+
+<h1>Разрешения ролей</h1>
+<p class="muted">Эта вкладка доступна админу 3 уровня. Тут можно настроить, что видят и могут делать другие уровни.</p>
+
+<% if (saved) { %>
+  <div class="card" style="margin:16px 0;"><b>Сохранено.</b></div>
+<% } %>
+
+<form method="post" action="/admin/permissions">
+  <% if (typeof csrfToken !== 'undefined' && csrfToken) { %>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <% } %>
+
+  <div class="card" style="overflow:auto;">
+    <table style="width:100%;min-width:900px;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:10px;">Раздел</th>
+          <th>Модер</th>
+          <th>Админ 1</th>
+          <th>Админ 2</th>
+          <th>Админ 3</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% Object.keys(features).forEach(function(key){ %>
+          <tr>
+            <td style="padding:10px;border-top:1px solid rgba(255,255,255,.08);">
+              <b><%= features[key] %></b><br>
+              <small class="muted"><%= key %></small>
+            </td>
+            <% ['moderator','admin1','admin2','admin3'].forEach(function(role){ %>
+              <td style="text-align:center;border-top:1px solid rgba(255,255,255,.08);">
+                <input
+                  type="checkbox"
+                  name="<%= role %>__<%= key %>"
+                  value="1"
+                  <%= permissions[role] && permissions[role][key] ? 'checked' : '' %>
+                  <%= role === 'admin3' && (key === 'overview' || key === 'permissions') ? 'disabled' : '' %>
+                >
+              </td>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:18px;">
+    <button class="button" type="submit">Сохранить разрешения</button>
+  </p>
+</form>
+
+<%- include('_layout_close') %>

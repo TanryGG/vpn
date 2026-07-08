@@ -1,0 +1,5 @@
+<%- include('_layout_open') %>
+<div class="page-head"><div><h1>Техподдержка</h1><p class="muted">Все тикеты пользователей. Модератор видит и отвечает, админы управляют статусами.</p></div></div>
+<div class="tabs"><a class="tab" href="/admin/support">Все</a><a class="tab" href="/admin/support?status=open">Открытые</a><a class="tab" href="/admin/support?status=answered">Отвеченные</a><a class="tab" href="/admin/support?status=closed">Закрытые</a></div>
+<div class="table-wrap"><table><tr><th>ID</th><th>Пользователь</th><th>Тема</th><th>Статус</th><th>Приоритет</th><th>Ответственный</th><th></th></tr><% tickets.forEach(t=>{ %><tr><td>#<%= t.id %></td><td><%= t.email %></td><td><%= t.subject %></td><td><span class="pill"><%= label('support', t.status) %></span></td><td><%= label('priority', t.priority) %></td><td><%= t.assigned_email || '-' %></td><td><a class="button smallbtn" href="/admin/support/<%= t.id %>">Открыть</a></td></tr><% }) %></table></div>
+<%- include('_layout_close') %>

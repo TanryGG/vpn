@@ -1,0 +1,123 @@
+const telegramProxyRoutes = require('./routes/telegramProxy');
+const express = require('express');
+const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+const flash = require('connect-flash');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const csurf = require('csurf');
+const env = require('./config/env');
+const { isInstalled } = require('./services/settings');
+const locals = require('./middleware/locals');
+const { expireOld } = require('./services/subscriptions');
+const { syncVpnAccess } = require('./services/vpn');
+const { startTelegramBotPolling } = require('./services/telegram');
+
+const app = express();
+
+// AstraGate cabinet aliases.
+app.get('/cabinet', (req, res) => res.redirect('/dashboard'));
+app.get('/cabinet/', (req, res) => res.redirect('/dashboard'));
+app.get('/cabinet/vpn', (req, res) => res.redirect('/dashboard#vpn'));
+app.get('/cabinet/gpt', (req, res) => res.redirect('/dashboard#gpt'));
+app.get('/cabinet/extend', (req, res) => res.redirect('/dashboard#plans'));
+app.get('/cabinet/profile', (req, res) => res.redirect('/dashboard#profile'));
+app.get('/cabinet/referrals', (req, res) => res.redirect('/dashboard#ref'));
+app.get('/cabinet/telegram', (req, res) => res.redirect('/dashboard#telegram-proxy'));
+
+
+// AstraGate Telegram Proxy config for views.
+app.use((req, res, next) => {
+  try {
+    const fs = require('fs');
+    const file = '/root/astragate/telegram-proxy.json';
+    if (fs.existsSync(file)) {
+      res.locals.telegramProxyConfig = JSON.parse(fs.readFileSync(file, 'utf8'));
+    } else {
+      res.locals.telegramProxyConfig = {
+        type: 'socks5',
+        host: 'astragate.su',
+        port: '8445',
+        username: 'tgproxy',
+        password: '',
+        url: ''
+      };
+    }
+  } catch (e) {
+    res.locals.telegramProxyConfig = {
+      type: 'socks5',
+      host: 'astragate.su',
+      port: '8445',
+      username: 'tgproxy',
+      password: '',
+      url: ''
+    };
+  }
+  next();
+});
+
+
+
+app.get('/cabinet', (req, res) => res.redirect('/dashboard'));
+app.get('/cabinet/', (req, res) => res.redirect('/dashboard'));
+app.get('/cabinet/vpn', (req, res) => res.redirect('/dashboard#vpn'));
+app.get('/cabinet/gpt', (req, res) => res.redirect('/dashboard#gpt'));
+app.get('/cabinet/extend', (req, res) => res.redirect('/dashboard#plans'));
+app.get('/cabinet/profile', (req, res) => res.redirect('/dashboard#profile'));
+app.get('/cabinet/referrals', (req, res) => res.redirect('/dashboard#ref'));
+app.get('/cabinet/telegram', (req, res) => res.redirect('/telegram-proxy'));
+
+
+// AstraGate user cabinet aliases.
+app.get('/cabinet/vpn', (req, res) => res.redirect('/dashboard#vpn'));
+app.get('/cabinet/extend', (req, res) => res.redirect('/plans'));
+app.get('/cabinet/referrals', (req, res) => res.redirect('/dashboard#ref'));
+
+
+
+app.use((req,res,next)=>{res.locals.user=(req.session&&req.session.user)?req.session.user:null;next();});
+
+app.set('view engine','ejs');
+app.set('views', path.join(__dirname,'views'));
+app.use(helmet({ contentSecurityPolicy:false }));
+app.use(morgan('combined'));
+app.use(express.static(path.join(__dirname,'public')));
+app.use(cookieParser());
+app.use(express.urlencoded({extended:true}));
+app.use(express.json());
+const sessionStore = new MySQLStore({}, require('./config/db').getPool());
+app.use(session({ secret: env.sessionSecret, resave:false, saveUninitialized:false, store:sessionStore, cookie:{ httpOnly:true, sameSite:'lax', secure:false, maxAge:1000*60*60*24*14 } }));
+app.use(flash());
+
+app.use('/webhooks', require('./routes/webhooks'));
+app.use('/api/mobile', require('./routes/mobile'));
+// Public subscription endpoint for Happ. It must not require session, CSRF or login.
+app.use('/sub', require('./routes/subfix'));
+app.use(csurf());
+app.use(locals);
+app.use(async (req,res,next)=>{
+  if(req.path.startsWith('/install') || req.path.startsWith('/css') || req.path.startsWith('/js')) return next();
+  try { if(!(await isInstalled())) return res.redirect('/install'); } catch(e) { return res.status(500).send('База не готова. Запусти: npm run migrate && npm run seed'); }
+  next();
+});
+app.use('/install', require('./routes/install'));
+app.use('/', require('./routes/auth'));
+app.use('/', require('./routes/site'));
+app.use('/', require('./routes/support'));
+app.use('/admin', require('./routes/admin'));
+app.use('/', telegramProxyRoutes);
+app.use((req,res)=>res.status(404).render('error',{title:'404',message:'Страница не найдена'}));
+app.use((err,req,res,next)=>{
+  console.error(err);
+  const isCsrf = err && err.code === 'EBADCSRFTOKEN';
+  const status = isCsrf ? 403 : 500;
+  const message = isCsrf ? 'Сессия устарела или токен формы неверный. Обнови страницу и повтори действие.' : (err.message || 'Внутренняя ошибка сервера');
+  try { res.status(status).render('error',{title:isCsrf?'Ошибка формы':'Ошибка',message}); }
+  catch(e){ res.status(status).send(message); }
+});
+
+setInterval(()=>expireOld().catch(()=>{}), 1000*60*5);
+setInterval(()=>syncVpnAccess().catch(()=>{}), 1000*60*5);
+app.listen(env.port, ()=>{ console.log(`VPN+GPT running on ${env.port}`); startTelegramBotPolling(); });

@@ -173,9 +173,10 @@ cat > /etc/vpn-gpt-xray/config.json <<JSON
     }
   ],
   "outbounds": [
-    { "protocol": "freedom", "tag": "direct" },
+    { "protocol": "freedom", "tag": "direct", "settings": { "domainStrategy": "UseIPv4" } },
     { "protocol": "blackhole", "tag": "block" }
-  ]
+  ],
+  "dns": { "servers": ["1.1.1.1", "8.8.8.8", "localhost"] }
 }
 JSON
 
